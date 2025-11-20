@@ -2,62 +2,62 @@ import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-900 dark:to-black">
+      <main className="flex w-full max-w-4xl flex-col gap-8 px-8 py-16">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Image
+            className="dark:invert"
+            src="/next.svg"
+            alt="Next.js logo"
+            width={180}
+            height={37}
+            priority
+          />
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">
+            Next.js Project
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
+            A modern Next.js application with TypeScript, Prisma, and more.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+          <h3 className="mb-4 text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+            Tech Stack
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <h4 className="mb-2 font-medium text-zinc-900 dark:text-zinc-50">Frontend</h4>
+              <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                <li>✓ Next.js (App Router)</li>
+                <li>✓ TypeScript</li>
+                <li>✓ TailwindCSS</li>
+                <li>✓ shadcn/ui</li>
+                <li>✓ React Query</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="mb-2 font-medium text-zinc-900 dark:text-zinc-50">Backend</h4>
+              <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                <li>✓ Prisma ORM</li>
+                <li>✓ Redis Caching</li>
+                <li>✓ Docker Support</li>
+                <li>✓ Bun Runtime</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg bg-zinc-100 p-6 dark:bg-zinc-900">
+          <h3 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            🚀 Next Steps
+          </h3>
+          <ol className="space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <li>1. Configure your <code className="rounded bg-white px-1.5 py-0.5 dark:bg-zinc-800">.env.local</code> file</li>
+            <li>2. Run <code className="rounded bg-white px-1.5 py-0.5 dark:bg-zinc-800">bunx prisma migrate dev</code> to set up your database</li>
+            <li>3. Start Redis server</li>
+            <li>4. Check out the <code className="rounded bg-white px-1.5 py-0.5 dark:bg-zinc-800">README.md</code> for more details</li>
+          </ol>
         </div>
       </main>
     </div>

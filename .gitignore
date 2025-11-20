@@ -10,6 +10,15 @@
 !.yarn/releases
 !.yarn/versions
 
+# bun
+bun.lockb
+
+# npm (legacy)
+package-lock.json
+
+# docker
+.docker/
+
 # testing
 /coverage
 
@@ -39,3 +48,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prisma generated
+/src/generated/prisma
+
+# uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
