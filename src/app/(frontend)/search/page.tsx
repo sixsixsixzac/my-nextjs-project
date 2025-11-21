@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback, Suspense, useRef } from "react";
-import { SearchFilters } from "@/app/search/filter";
+import { SearchFilters } from "@/app/(frontend)/search/filter";
 import { SearchResults } from "@/components/search/SearchResults";
 import { searchCartoons } from "@/lib/api/search";
 import type { SearchFilters as SearchFiltersType, SearchResponse } from "@/lib/types/search";
@@ -54,6 +54,11 @@ function SearchPageContent() {
   }), [searchParams]);
   
   const [filters, setFilters] = useState<SearchFiltersType>(initialFilters);
+
+  // Sync filters with URL params when they change
+  useEffect(() => {
+    setFilters(initialFilters);
+  }, [initialFilters]);
 
   // RxJS subjects for filters - only create after RxJS is loaded, use refs to persist
   const name$Ref = useRef<any>(null);
@@ -114,7 +119,7 @@ function SearchPageContent() {
         
         // Update previous filters
         prevFiltersRef.current = filterKey;
-        
+        console.log("Filter params:", filterParams);
         // On initial load or filter change, always use page 1
         if (isInitialLoadRef.current) {
           isInitialLoadRef.current = false;

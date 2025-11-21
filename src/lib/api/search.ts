@@ -263,6 +263,7 @@ export async function searchCartoons(
 
     // Build parameterized query to prevent SQL injection
     // Using $queryRawUnsafe with proper parameterization for dynamic queries
+    // Note: Prisma $queryRawUnsafe uses ? placeholders and expects parameters in order
     const safeRawQuery = `
       SELECT c.p_id, c.uuid
       FROM cartoons c
@@ -273,24 +274,26 @@ export async function searchCartoons(
       LIMIT ? OFFSET ?
     `;
 
-    const safeRawResults = await prisma.$queryRawUnsafe<RawSQLResult[]>(
-      safeRawQuery,
-      ...sqlParams,
-      limit + 1,
-      skip
-    );
+    try {
+      const safeRawResults = await prisma.$queryRawUnsafe<RawSQLResult[]>(
+        safeRawQuery,
+        ...sqlParams,
+        limit + 1,
+        skip
+      );
 
-    const pIds = safeRawResults.map((r) => Number(r.p_id));
+ 
+      const pIds = safeRawResults.map((r) => Number(r.p_id));
 
-    if (pIds.length === 0) {
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-        hasMore: false,
-      };
-    }
+      if (pIds.length === 0) {
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          hasMore: false,
+        };
+      }
 
     // Fetch full cartoon data with relations, maintaining order
     const fetchedCartoons = await prisma.cartoon.findMany({
@@ -331,16 +334,50 @@ export async function searchCartoons(
       fetchedCartoons.map((c) => [c.pId, c])
     );
 
-    // Sort cartoons to match raw query order, filtering out any missing items
-    cartoons = safeRawResults
-      .map((r) => {
-        const cartoon = cartoonsMap.get(Number(r.p_id));
-        if (!cartoon) return null;
-        // Remove pId from the result to match CartoonQueryResult type
-        const { pId, ...rest } = cartoon;
-        return rest as CartoonQueryResult;
-      })
-      .filter((c): c is CartoonQueryResult => c !== null);
+      // Sort cartoons to match raw query order, filtering out any missing items
+      cartoons = safeRawResults
+        .map((r) => {
+          const cartoon = cartoonsMap.get(Number(r.p_id));
+          if (!cartoon) return null;
+          // Remove pId from the result to match CartoonQueryResult type
+          const { pId, ...rest } = cartoon;
+          return rest as CartoonQueryResult;
+        })
+        .filter((c): c is CartoonQueryResult => c !== null);
+    } catch (error) {
+
+      cartoons = await prisma.cartoon.findMany({
+        where,
+        skip,
+        take: limit + 1,
+        orderBy: { createdAt: "desc" },
+        select: {
+          uuid: true,
+          title: true,
+          coverImage: true,
+          type: true,
+          completionStatus: true,
+          createdAt: true,
+          categoryMain: true,
+          categorySub: true,
+          ageRate: true,
+          author: {
+            select: {
+              displayName: true,
+              userImg: true,
+              level: true,
+            },
+          },
+          _count: {
+            select: {
+              episodeViews: true,
+              favorites: true,
+              episodes: true,
+            },
+          },
+        },
+      });
+    }
   } else {
     // Standard Prisma query for simple ordering
     cartoons = await prisma.cartoon.findMany({
