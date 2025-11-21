@@ -148,6 +148,51 @@ export async function getAllCartoons(): Promise<CartoonCardProps[]> {
   return cachedCartoons;
 }
 
+// Server-side function to get cartoons by type and sort order
+export async function getCartoonsByType(
+  cartoonType: "manga" | "novel",
+  type: "popular" | "latest" | "trending" = "popular",
+  limit?: number
+): Promise<CartoonCardProps[]> {
+  const allCartoons = await getAllCartoons();
+  
+  // Filter by cartoonType
+  const filteredData = allCartoons.filter((item) => {
+    if (cartoonType === "manga") {
+      return item.type === "manga" || !item.id.startsWith("n");
+    } else {
+      return item.type === "novel" || item.id.startsWith("n");
+    }
+  });
+  
+  // Sort based on type
+  let sortedData = [...filteredData];
+  switch (type) {
+    case "popular":
+      sortedData.sort((a, b) => (b.views || 0) - (a.views || 0));
+      break;
+    case "latest":
+      sortedData.sort((a, b) => {
+        const aId = parseInt(a.id.replace("n", ""));
+        const bId = parseInt(b.id.replace("n", ""));
+        return bId - aId;
+      });
+      break;
+    case "trending":
+      sortedData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      break;
+    default:
+      sortedData.sort((a, b) => (b.views || 0) - (a.views || 0));
+  }
+  
+  // Limit results if specified
+  if (limit) {
+    return sortedData.slice(0, limit);
+  }
+  
+  return sortedData;
+}
+
 // Search API function using JSONPlaceholder
 export async function searchCartoons(
   params: SearchParams

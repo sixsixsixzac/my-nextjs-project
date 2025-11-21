@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { BehaviorSubject, combineLatest, map } from "rxjs";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Virtual } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -28,6 +27,7 @@ interface CartoonSectionProps {
     desktop?: number;
   };
   className?: string;
+  initialData?: CartoonCardProps[]; // Pre-fetched data from server to improve LCP
 }
 
 export function CartoonSection({
@@ -41,15 +41,22 @@ export function CartoonSection({
     desktop: 5,
   },
   className,
+  initialData,
 }: CartoonSectionProps) {
   const router = useRouter();
   
   // Fetch data based on cartoonType and type
   // Backend handles ordering logic based on type
-  const [items, setItems] = useState<CartoonCardProps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // If initialData is provided, use it to skip client-side fetching (improves LCP)
+  const [items, setItems] = useState<CartoonCardProps[]>(initialData || []);
+  const [isLoading, setIsLoading] = useState(!initialData);
 
   useEffect(() => {
+    // Skip fetching if initialData is provided
+    if (initialData) {
+      return;
+    }
+
     const fetchData = async () => {
       setIsLoading(true);
       
@@ -98,83 +105,67 @@ export function CartoonSection({
     };
 
     fetchData();
-  }, [cartoonType, type]);
+  }, [cartoonType, type, initialData]);
 
   const swiperRef = useRef<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
-  // Initialize with empty set - skeletons will show until items are loaded
-  const [loadedItems, setLoadedItems] = useState<Set<number>>(new Set());
+  // Initialize loadedItems: if initialData is provided, pre-load first items for better LCP
+  const [loadedItems, setLoadedItems] = useState<Set<number>>(() => {
+    if (initialData && initialData.length > 0) {
+      const initialCount = Math.min(initialData.length, itemsPerView.desktop ?? 5);
+      const set = new Set<number>();
+      for (let i = 0; i <= initialCount; i++) {
+        set.add(i);
+      }
+      return set;
+    }
+    return new Set<number>();
+  });
   // Initialize with desktop value to avoid hydration mismatch
   const [currentItemsPerView, setCurrentItemsPerView] = useState(
     itemsPerView.desktop ?? 5
   );
   const [isMounted, setIsMounted] = useState(false);
 
-  // RxJS observables for lazy loading management
-  const activeIndex$ = useMemo(() => new BehaviorSubject<number>(0), []);
-  const itemsPerView$ = useMemo(
-    () =>
-      new BehaviorSubject<number>(
-        typeof window !== "undefined"
-          ? window.innerWidth >= 1024
-            ? itemsPerView.desktop ?? 5
-            : window.innerWidth >= 768
-              ? itemsPerView.tablet ?? 3
-              : 2.5 // Mobile shows 2.5 items
-          : itemsPerView.desktop ?? 5
-      ),
-    [itemsPerView]
-  );
-
-  // Calculate which items should be loaded based on active index and items per view
-  const visibleRange$ = useMemo(
-    () =>
-      combineLatest([activeIndex$, itemsPerView$]).pipe(
-        map(([index, perView]) => {
-          const maxIndex = items.length > 0 ? items.length - 1 : 0;
-          const start = Math.max(0, index - 1); // Load one before
-          const end = Math.min(maxIndex, index + perView + 1); // Load one after
-          return { start, end };
-        })
-      ),
-    [activeIndex$, itemsPerView$, items.length]
-  );
-
-  // Subscribe to visible range changes and update loaded items
+  // Calculate visible range based on active index and items per view (replaced RxJS with simple React state)
   useEffect(() => {
-    const subscription = visibleRange$.subscribe((range) => {
-      setLoadedItems((prev) => {
-        // Check if we need to update at all
-        let needsUpdate = false;
-        for (let i = range.start; i <= range.end; i++) {
-          if (!prev.has(i)) {
-            needsUpdate = true;
-            break;
-          }
+    if (items.length === 0) return;
+    
+    const maxIndex = items.length - 1;
+    const start = Math.max(0, activeIndex - 1); // Load one before
+    const end = Math.min(maxIndex, activeIndex + currentItemsPerView + 1); // Load one after
+    
+    setLoadedItems((prev) => {
+      // Check if we need to update at all
+      let needsUpdate = false;
+      for (let i = start; i <= end; i++) {
+        if (!prev.has(i)) {
+          needsUpdate = true;
+          break;
         }
-        
-        if (!needsUpdate) return prev; // Return same reference to avoid re-render
-        
-        const newSet = new Set(prev);
-        for (let i = range.start; i <= range.end; i++) {
-          if (!prev.has(i)) {
-            newSet.add(i);
-          }
+      }
+      
+      if (!needsUpdate) return prev; // Return same reference to avoid re-render
+      
+      const newSet = new Set(prev);
+      for (let i = start; i <= end; i++) {
+        if (!prev.has(i)) {
+          newSet.add(i);
         }
-        return newSet;
-      });
+      }
+      return newSet;
     });
-
-    return () => subscription.unsubscribe();
-  }, [visibleRange$]);
+  }, [activeIndex, currentItemsPerView, items.length]);
 
   // Pre-load initial items immediately after mount
+  // If initialData is provided, load immediately without delay (improves LCP)
   useEffect(() => {
     if (!isMounted || items.length === 0) return;
     
-    // Small delay to ensure skeletons show first, then load items
+    // If initialData is provided, load immediately without delay
+    const delay = initialData ? 0 : 100;
     const timer = setTimeout(() => {
       // Calculate initial visible range based on current viewport
       const width = typeof window !== "undefined" ? window.innerWidth : 1024;
@@ -198,10 +189,10 @@ export function CartoonSection({
         }
         return newSet;
       });
-    }, 100); // Small delay to show skeletons first
+    }, delay);
     
     return () => clearTimeout(timer);
-  }, [isMounted, items.length, itemsPerView]);
+  }, [isMounted, items.length, itemsPerView, initialData]);
 
   // Set mounted state after hydration
   useEffect(() => {
@@ -221,7 +212,6 @@ export function CartoonSection({
             ? itemsPerView.tablet ?? 3
             : 2.5; // Mobile shows 2.5 items
       setCurrentItemsPerView(perView);
-      itemsPerView$.next(perView);
     };
 
     // Initial calculation
@@ -229,7 +219,7 @@ export function CartoonSection({
     window.addEventListener("resize", handleResize);
 
     return () => window.removeEventListener("resize", handleResize);
-  }, [itemsPerView, itemsPerView$, isMounted]);
+  }, [itemsPerView, isMounted]);
 
   const handleSlideChange = useCallback((swiper: SwiperType) => {
     const newIndex = swiper.activeIndex;
@@ -237,10 +227,9 @@ export function CartoonSection({
       if (prev === newIndex) return prev; // Avoid unnecessary update
       return newIndex;
     });
-    activeIndex$.next(newIndex);
     setIsBeginning(swiper.isBeginning);
     setIsEnd(swiper.isEnd);
-  }, [activeIndex$]);
+  }, []);
 
   const handleSwiperInit = useCallback((swiper: SwiperType) => {
     swiperRef.current = swiper;

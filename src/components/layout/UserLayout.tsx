@@ -69,7 +69,7 @@ export async function UserLayout({ children }: UserLayoutProps) {
                 alt="Logo"
                 width={570}
                 height={103}
-                className="h-6 sm:h-8 md:h-10 lg:h-12 w-auto"
+                className="h-auto w-32 sm:w-40 md:w-48 lg:w-56"
                 priority
               />
             </Link>
@@ -82,7 +82,13 @@ export async function UserLayout({ children }: UserLayoutProps) {
 
           {/* Right side - User menu */}
           <div className="flex items-center justify-end gap-3 sm:gap-4">
-            <ThemeToggle />
+            {/* Theme Toggle - Show on mobile and desktop */}
+            <div className="md:hidden">
+              <ThemeToggle showOnMobile={true} />
+            </div>
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
             {user && (
               <>
                 <NotificationDropdown />
