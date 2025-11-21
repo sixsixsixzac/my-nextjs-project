@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Eye, BookOpen, CheckCircle2, Clock, Heart, CheckCircle, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OptimizedImage } from "@/components/OptimizedImage";
+import { OptimizedImage } from "@/components/common/OptimizedImage";
 
 export interface CartoonCardProps {
   uuid: string;
@@ -53,7 +53,8 @@ function CartoonCardComponent({
   ageRate,
 }: CartoonCardProps) {
   // Generate href from type and uuid if href is not provided
-  const generatedHref = href || (type ? `/${type}/${uuid}` : undefined);
+  // Format: /manga/uuid or /novel/uuid
+  const generatedHref = href || (type && uuid ? `/${type}/${uuid}` : undefined);
 
   const cardContent = (
     <article
@@ -192,17 +193,17 @@ function CartoonCardComponent({
         {/* Statistics */}
         <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <Eye className="size-3.5 shrink-0" aria-hidden="true" />
+            <Eye className="size-3.5 shrink-0 transition-colors group-hover:text-blue-500" aria-hidden="true" />
             <span itemProp="interactionStatistic" className="whitespace-nowrap">
               {formatNumber(views)}
             </span>
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <Heart className="size-3.5 shrink-0" aria-hidden="true" />
+            <Heart className="size-3.5 shrink-0 transition-colors group-hover:text-red-500" aria-hidden="true" />
             <span className="whitespace-nowrap">{formatNumber(likes)}</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <BookOpen className="size-3.5 shrink-0" aria-hidden="true" />
+            <BookOpen className="size-3.5 shrink-0 transition-colors group-hover:text-green-500" aria-hidden="true" />
             <span className="whitespace-nowrap">{chapters}</span>
           </div>
         </div>

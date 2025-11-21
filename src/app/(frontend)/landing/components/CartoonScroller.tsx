@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CartoonCard, type CartoonCardProps } from "./CartoonCard";
-import { CartoonCardSkeleton } from "./CartoonCardSkeleton";
+import { CartoonCard, type CartoonCardProps } from "../../../../components/common/CartoonCard";
+import { CartoonCardSkeleton } from "../../../../components/common/CartoonCardSkeleton";
 import { cn } from "@/lib/utils";
 import type { SearchParams, SearchResponse } from "@/lib/types/search";
+import { Subject, from } from "rxjs";
+import { filter, switchMap, takeUntil } from "rxjs/operators";
 
 interface CartoonScrollerProps {
   initialData: CartoonCardProps[];
@@ -14,6 +16,7 @@ interface CartoonScrollerProps {
   fetchParams?: Omit<SearchParams, "page" | "limit">;
   limit?: number;
   initialHasMore?: boolean;
+  isInViewport?: boolean;
 }
 
 /**
@@ -32,8 +35,24 @@ export function CartoonScroller({
   fetchParams = {},
   limit = 20,
   initialHasMore = true,
+  isInViewport = true,
 }: CartoonScrollerProps) {
   const [isDesktop, setIsDesktop] = useState(false);
+  const fetchTrigger$Ref = useRef<Subject<void> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Initialize Subject once
+  useEffect(() => {
+    if (!fetchTrigger$Ref.current) {
+      fetchTrigger$Ref.current = new Subject<void>();
+    }
+    return () => {
+      if (fetchTrigger$Ref.current) {
+        fetchTrigger$Ref.current.complete();
+        fetchTrigger$Ref.current = null;
+      }
+    };
+  }, []);
   
   // Maximum items limit: 24 for desktop (6 × 4), 25 for mobile (2.5 × 10)
   // Limit initial data based on current viewport (will update on resize)
@@ -114,9 +133,103 @@ export function CartoonScroller({
     }, 100);
   }, [checkScrollPosition]);
 
-  // Load more cartoons when reaching the end
-  const loadMoreCartoons = useCallback(async () => {
-    if (isLoading || !hasMore) return;
+  // RxJS-based fetch handler that respects viewport visibility
+  useEffect(() => {
+    if (!fetchTrigger$Ref.current) return;
+
+    const subscription = fetchTrigger$Ref.current.pipe(
+      // Only proceed if in viewport
+      filter(() => isInViewport && !isLoading && hasMore),
+      // Switch to fetch operation, canceling previous if still in progress
+      switchMap(() => {
+        // Check if we've reached the maximum limit
+        const currentMaxLimit = isDesktop ? 24 : 25;
+        if (cartoons.length >= currentMaxLimit) {
+          setHasMore(false);
+          return from(Promise.resolve<SearchResponse>({ data: [], total: 0, page: currentPage + 1, limit, hasMore: false }));
+        }
+
+        // Abort any ongoing fetch
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+
+        setIsLoading(true);
+        const nextPage = currentPage + 1;
+        
+        // Create abort controller for this fetch
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        return from(
+          fetchMore({
+            ...fetchParams,
+            page: nextPage,
+            limit,
+          })
+        ).pipe(
+          takeUntil(
+            from(
+              new Promise<void>((resolve) => {
+                if (controller.signal.aborted) {
+                  resolve();
+                } else {
+                  controller.signal.addEventListener('abort', () => resolve());
+                }
+              })
+            )
+          )
+        );
+      })
+    ).subscribe({
+      next: (response: SearchResponse) => {
+        // Check if fetch was aborted
+        if (abortControllerRef.current?.signal.aborted) {
+          setIsLoading(false);
+          return;
+        }
+
+        const currentMaxLimit = isDesktop ? 24 : 25;
+        
+        if (response.data.length > 0) {
+          setCartoons((prevCartoons) => {
+            const newCartoons = [...prevCartoons, ...response.data];
+            // Limit to max items
+            const limitedCartoons = newCartoons.slice(0, currentMaxLimit);
+            // Stop loading if we've reached the limit or no more data
+            setHasMore(limitedCartoons.length < currentMaxLimit && response.hasMore);
+            return limitedCartoons;
+          });
+          setCurrentPage((prevPage) => prevPage + 1);
+        } else {
+          setHasMore(false);
+        }
+        setIsLoading(false);
+        abortControllerRef.current = null;
+      },
+      error: (error: unknown) => {
+        // Ignore abort errors
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error("Failed to load more cartoons:", error);
+        }
+        setHasMore(false);
+        setIsLoading(false);
+        abortControllerRef.current = null;
+      },
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, [isInViewport, isLoading, hasMore, currentPage, fetchMore, fetchParams, limit, cartoons.length, isDesktop]);
+
+  // Load more cartoons when reaching the end (triggers RxJS stream)
+  const loadMoreCartoons = useCallback(() => {
+    if (isLoading || !hasMore || !isInViewport) return;
 
     // Check if we've reached the maximum limit
     const currentMaxLimit = isDesktop ? 24 : 25;
@@ -125,36 +238,17 @@ export function CartoonScroller({
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const nextPage = currentPage + 1;
-      const response = await fetchMore({
-        ...fetchParams,
-        page: nextPage,
-        limit,
-      });
-
-      if (response.data.length > 0) {
-        const newCartoons = [...cartoons, ...response.data];
-        // Limit to max items
-        const limitedCartoons = newCartoons.slice(0, currentMaxLimit);
-        setCartoons(limitedCartoons);
-        setCurrentPage(nextPage);
-        // Stop loading if we've reached the limit or no more data
-        setHasMore(limitedCartoons.length < currentMaxLimit && response.hasMore);
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Failed to load more cartoons:", error);
-      setHasMore(false);
-    } finally {
-      setIsLoading(false);
+    // Trigger RxJS stream
+    if (fetchTrigger$Ref.current) {
+      fetchTrigger$Ref.current.next();
     }
-  }, [isLoading, hasMore, currentPage, fetchMore, fetchParams, limit, cartoons.length, isDesktop]);
+  }, [isLoading, hasMore, isInViewport, cartoons.length, isDesktop]);
 
-  // Intersection Observer for infinite scroll
+  // Intersection Observer for infinite scroll (only triggers if in viewport)
   useEffect(() => {
+    // Don't observe if not in viewport
+    if (!isInViewport) return;
+
     const currentMaxLimit = isDesktop ? 24 : 25;
     // Don't observe if we've reached the limit
     if (cartoons.length >= currentMaxLimit) {
@@ -165,7 +259,7 @@ export function CartoonScroller({
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (entry?.isIntersecting && hasMore && !isLoading) {
+        if (entry?.isIntersecting && hasMore && !isLoading && isInViewport) {
           loadMoreCartoons();
         }
       },
@@ -186,7 +280,7 @@ export function CartoonScroller({
         observer.unobserve(trigger);
       }
     };
-  }, [hasMore, isLoading, loadMoreCartoons, cartoons.length, isDesktop]);
+  }, [hasMore, isLoading, loadMoreCartoons, cartoons.length, isDesktop, isInViewport]);
 
   // Initial scroll position check and scroll event listener
   useEffect(() => {

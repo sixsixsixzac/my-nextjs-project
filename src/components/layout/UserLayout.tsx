@@ -2,11 +2,11 @@
 import { ReactNode } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { MobileMenu, type MenuItem } from "@/components/MobileMenu"
+import { MobileMenu, type MenuItem } from "@/components/common/MobileMenu"
 import { DesktopMenu } from "@/components/DesktopMenu"
-import { NotificationDropdown } from "@/components/NotificationDropdown"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { UserDropdownMenu } from "@/components/UserDropdownMenu"
+import { NotificationDropdown } from "@/components/common/NotificationDropdown"
+import { ThemeToggle } from "@/components/common/ThemeToggle"
+import { UserDropdownMenu } from "@/components/common/UserDropdownMenu"
 import { getCurrentUser } from "@/lib/auth/session"
 // import { isAdmin, isWriter } from "@/lib/utils/roles"
 
@@ -63,7 +63,7 @@ export async function UserLayout({ children }: UserLayoutProps) {
             <MobileMenu menuItems={menuItems} />
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 font-semibold">
+            <Link href="/home" className="flex items-center gap-2 font-semibold">
               <Image
                 src="/logo/logo.png"
                 alt="Logo"

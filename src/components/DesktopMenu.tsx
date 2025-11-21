@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { type MenuItem } from "./MobileMenu"
+import { type MenuItem } from "./common/MobileMenu"
 import { cn } from "@/lib/utils"
 
 interface DesktopMenuProps {

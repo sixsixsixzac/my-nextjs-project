@@ -1,6 +1,6 @@
 import { generateMetadata } from "@/lib/utils/metadata";
 import type { Metadata } from "next";
-import { CartoonSection } from "@/components/CartoonSection";
+import { CartoonSection } from "@/app/(frontend)/landing/components/CartoonSection";
 
 export const metadata: Metadata = generateMetadata({
   title: "หน้าหลัก",

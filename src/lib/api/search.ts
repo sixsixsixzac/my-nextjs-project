@@ -1,8 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import {
+  ORIGIN_TYPE_THAI,
+  ORIGIN_TYPE_JAPANESE,
+  ORIGIN_TYPE_KOREAN,
+  ORIGIN_TYPE_CHINESE,
+} from "@/lib/constants/cartoon.constants";
 import type { SearchParams, SearchResponse } from "@/lib/types/search";
-import type { CartoonCardProps } from "@/components/CartoonCard";
+import type { CartoonCardProps } from "@/components/common/CartoonCard";
 import { Prisma } from "@prisma/client";
 
 // Type for cartoon query result
@@ -43,8 +49,8 @@ function buildWhereClause(params: {
   complete_status?: string;
   age?: string;
   original?: string;
-  mainCategory?: string;
-  subCategory?: string;
+  mainCategory?: string | string[];
+  subCategory?: string | string[];
 }): Prisma.CartoonWhereInput {
   const where: Prisma.CartoonWhereInput = {
     status: "active",
@@ -68,15 +74,33 @@ function buildWhereClause(params: {
   }
 
   if (params.original && params.original !== "all") {
-    where.originType = params.original === "original" ? 1 : 2;
+    const originType = parseInt(params.original, 10);
+    if (
+      [
+        ORIGIN_TYPE_THAI,
+        ORIGIN_TYPE_JAPANESE,
+        ORIGIN_TYPE_KOREAN,
+        ORIGIN_TYPE_CHINESE,
+      ].includes(originType)
+    ) {
+      where.originType = originType;
+    }
   }
 
   if (params.mainCategory && params.mainCategory !== "all") {
-    where.categoryMain = parseInt(params.mainCategory, 10);
+    if (Array.isArray(params.mainCategory)) {
+      where.categoryMain = { in: params.mainCategory.map((id) => parseInt(id, 10)) };
+    } else {
+      where.categoryMain = parseInt(params.mainCategory, 10);
+    }
   }
 
   if (params.subCategory && params.subCategory !== "all") {
-    where.categorySub = parseInt(params.subCategory, 10);
+    if (Array.isArray(params.subCategory)) {
+      where.categorySub = { in: params.subCategory.map((id) => parseInt(id, 10)) };
+    } else {
+      where.categorySub = parseInt(params.subCategory, 10);
+    }
   }
 
   return where;
@@ -91,8 +115,8 @@ function buildSQLWhereClause(params: {
   complete_status?: string;
   age?: string;
   original?: string;
-  mainCategory?: string;
-  subCategory?: string;
+  mainCategory?: string | string[];
+  subCategory?: string | string[];
 }): { conditions: string[]; sqlParams: unknown[] } {
   const conditions: string[] = ["c.status = 'active'", "c.publish_status = 1"];
   const sqlParams: unknown[] = [];
@@ -118,18 +142,44 @@ function buildSQLWhereClause(params: {
   }
 
   if (params.original && params.original !== "all") {
-    conditions.push("c.origin_type = ?");
-    sqlParams.push(params.original === "original" ? 1 : 2);
+    const originType = parseInt(params.original, 10);
+    if (
+      [
+        ORIGIN_TYPE_THAI,
+        ORIGIN_TYPE_JAPANESE,
+        ORIGIN_TYPE_KOREAN,
+        ORIGIN_TYPE_CHINESE,
+      ].includes(originType)
+    ) {
+      conditions.push("c.origin_type = ?");
+      sqlParams.push(originType);
+    }
   }
 
   if (params.mainCategory && params.mainCategory !== "all") {
-    conditions.push("c.category_main = ?");
-    sqlParams.push(parseInt(params.mainCategory, 10));
+    if (Array.isArray(params.mainCategory)) {
+      const placeholders = params.mainCategory.map(() => "?").join(",");
+      conditions.push(`c.category_main IN (${placeholders})`);
+      params.mainCategory.forEach((id) => {
+        sqlParams.push(parseInt(id, 10));
+      });
+    } else {
+      conditions.push("c.category_main = ?");
+      sqlParams.push(parseInt(params.mainCategory, 10));
+    }
   }
 
   if (params.subCategory && params.subCategory !== "all") {
-    conditions.push("c.category_sub = ?");
-    sqlParams.push(parseInt(params.subCategory, 10));
+    if (Array.isArray(params.subCategory)) {
+      const placeholders = params.subCategory.map(() => "?").join(",");
+      conditions.push(`c.category_sub IN (${placeholders})`);
+      params.subCategory.forEach((id) => {
+        sqlParams.push(parseInt(id, 10));
+      });
+    } else {
+      conditions.push("c.category_sub = ?");
+      sqlParams.push(parseInt(params.subCategory, 10));
+    }
   }
 
   return { conditions, sqlParams };
