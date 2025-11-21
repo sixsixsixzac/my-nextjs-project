@@ -4,7 +4,7 @@ import { signIn } from 'next-auth/react'
 import { useState, useRef, FormEvent, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Lock, Eye, EyeOff, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,7 +28,7 @@ const ReCAPTCHA = dynamic(
 export function SignInForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
@@ -36,12 +36,12 @@ export function SignInForm() {
   const recaptchaRef = useRef<any>(null)
   const isProduction = process.env.NODE_ENV === 'production'
 
-  // Load remembered email on mount
+  // Load remembered identifier on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const rememberedEmail = localStorage.getItem('rememberedEmail')
-      if (rememberedEmail) {
-        setEmail(rememberedEmail)
+      const rememberedIdentifier = localStorage.getItem('rememberedIdentifier')
+      if (rememberedIdentifier) {
+        setIdentifier(rememberedIdentifier)
         setRememberMe(true)
       }
     }
@@ -64,20 +64,20 @@ export function SignInForm() {
 
       // Handle remember me functionality
       if (rememberMe && typeof window !== 'undefined') {
-        localStorage.setItem('rememberedEmail', email)
+        localStorage.setItem('rememberedIdentifier', identifier)
       } else if (typeof window !== 'undefined') {
-        localStorage.removeItem('rememberedEmail')
+        localStorage.removeItem('rememberedIdentifier')
       }
 
       const result = await signIn('credentials', {
-        email,
+        identifier,
         password,
         redirect: false,
         callbackUrl: '/',
       })
 
       if (result?.error) {
-        alert('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
+        alert('อีเมล/ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
       } else if (result?.ok) {
         window.location.href = '/'
       }
@@ -130,24 +130,21 @@ export function SignInForm() {
               className="object-contain"
             />
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            เข้าสู่ระบบเพื่อใช้งานต่อ
-          </p>
         </div>
 
         <form onSubmit={handleCredentialsSignIn} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">อีเมล</Label>
+            <Label htmlFor="identifier">อีเมลหรือชื่อผู้ใช้</Label>
             <InputGroup>
               <InputGroupAddon>
-                <Mail className="size-4" />
+                <User className="size-4" />
               </InputGroupAddon>
               <InputGroupInput
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier"
+                type="text"
+                placeholder="อีเมลหรือชื่อผู้ใช้"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
                 disabled={isLoading || isGoogleLoading}
               />
@@ -201,6 +198,12 @@ export function SignInForm() {
                 จดจำฉัน
               </Label>
             </div>
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-primary hover:underline"
+            >
+              ลืมรหัสผ่าน
+            </Link>
           </div>
 
           {isProduction && (

@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import type { SocialLinks } from '@/app/(frontend)/settings/components/SocialMediaSection'
 
 export const authConfig: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -15,17 +16,22 @@ export const authConfig: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        identifier: { label: 'Email or Username', type: 'text' },
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.identifier || !credentials?.password) {
           throw new Error('Invalid credentials')
         }
 
-        // Find user in UserProfile table (matches the PHP member table)
+        // Find user in UserProfile table by email or username
         const user = await prisma.userProfile.findFirst({
-          where: { email: credentials.email }
+          where: {
+            OR: [
+              { email: credentials.identifier },
+              { uName: credentials.identifier }
+            ]
+          }
         })
 
         if (!user || !user.pWord) {
@@ -62,11 +68,39 @@ export const authConfig: NextAuthOptions = {
           throw new Error('Invalid credentials')
         }
 
+        // Parse social media from JSON string
+        let socialMedia: SocialLinks | null = null
+        if (user.socialMedia) {
+          try {
+            const parsed = JSON.parse(user.socialMedia)
+            // Ensure all required fields exist with defaults
+            socialMedia = {
+              x: parsed.x || '',
+              instagram: parsed.instagram || '',
+              youtube: parsed.youtube || '',
+              tiktok: parsed.tiktok || '',
+              discord: parsed.discord || '',
+              facebook: parsed.facebook || ''
+            }
+          } catch (error) {
+            // If parsing fails, use default empty values
+            socialMedia = {
+              x: '',
+              instagram: '',
+              youtube: '',
+              tiktok: '',
+              discord: '',
+              facebook: ''
+            }
+          }
+        }
+
         return {
           id: user.id.toString(),
           email: user.email,
           name: user.displayName || user.uName,
-          image: user.userImg !== 'none.png' ? `/images/${user.userImg}` : null
+          image: user.userImg !== 'none.png' ? `/images/${user.userImg}` : null,
+          socialMedia
         }
       }
     })
@@ -80,15 +114,117 @@ export const authConfig: NextAuthOptions = {
     error: '/auth/error'
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // Initial sign-in - set user data from user object
       if (user) {
         token.id = user.id
+        token.socialMedia = user.socialMedia || null
       }
+      
+      // For Google sign-in on first login, fetch user data including social media
+      if (account?.provider === 'google' && user) {
+        try {
+          const dbUser = await prisma.userProfile.findFirst({
+            where: {
+              OR: [
+                { googleId: account.providerAccountId },
+                { email: user.email || '' }
+              ]
+            },
+            select: {
+              id: true,
+              socialMedia: true
+            }
+          })
+
+          if (dbUser?.socialMedia) {
+            try {
+              const parsed = JSON.parse(dbUser.socialMedia)
+              token.socialMedia = {
+                x: parsed.x || '',
+                instagram: parsed.instagram || '',
+                youtube: parsed.youtube || '',
+                tiktok: parsed.tiktok || '',
+                discord: parsed.discord || '',
+                facebook: parsed.facebook || ''
+              }
+            } catch (error) {
+              token.socialMedia = {
+                x: '',
+                instagram: '',
+                youtube: '',
+                tiktok: '',
+                discord: '',
+                facebook: ''
+              }
+            }
+          } else {
+            token.socialMedia = {
+              x: '',
+              instagram: '',
+              youtube: '',
+              tiktok: '',
+              discord: '',
+              facebook: ''
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching social media for Google user:', error)
+        }
+      }
+      
+      // On subsequent requests, if socialMedia is not in token, fetch it
+      if (token.id && !token.socialMedia) {
+        try {
+          const dbUser = await prisma.userProfile.findUnique({
+            where: { id: parseInt(token.id as string) },
+            select: {
+              socialMedia: true
+            }
+          })
+
+          if (dbUser?.socialMedia) {
+            try {
+              const parsed = JSON.parse(dbUser.socialMedia)
+              token.socialMedia = {
+                x: parsed.x || '',
+                instagram: parsed.instagram || '',
+                youtube: parsed.youtube || '',
+                tiktok: parsed.tiktok || '',
+                discord: parsed.discord || '',
+                facebook: parsed.facebook || ''
+              }
+            } catch (error) {
+              token.socialMedia = {
+                x: '',
+                instagram: '',
+                youtube: '',
+                tiktok: '',
+                discord: '',
+                facebook: ''
+              }
+            }
+          } else {
+            token.socialMedia = {
+              x: '',
+              instagram: '',
+              youtube: '',
+              tiktok: '',
+              discord: '',
+              facebook: ''
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching social media:', error)
+        }
+      }
+      
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
+        session.user.socialMedia = token.socialMedia || null
       }
       return session
     }
