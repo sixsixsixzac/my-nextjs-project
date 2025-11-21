@@ -274,6 +274,7 @@ model MangaCategory {
 model MangaEp {
   epId             Int             @id @default(autoincrement()) @map("ep_id") @db.Int
   pId              Int             @map("p_id") @db.Int
+  uuid             String          @default(dbgenerated("(UUID())")) @db.Char(36)
   epName           String          @map("ep_name") @db.VarChar(60)
   epContent        String?         @map("ep_content") @db.LongText
   epNo             Int             @map("ep_no") @db.Int
@@ -293,6 +294,7 @@ model MangaEp {
 
   @@unique([pId, epNo])
   @@index([pId])
+  @@index([uuid])
   @@map("manga_ep")
 }
 

@@ -9,6 +9,7 @@ services:
       MYSQL_DATABASE: pekotoon_db
       MYSQL_USER: admin_web
       MYSQL_PASSWORD: admin_web
+      TZ: Asia/Bangkok
     ports:
       - "3307:3306"
     volumes:
@@ -20,7 +21,7 @@ services:
       retries: 5
     networks:
       - app-network-dev
-    command: --max_allowed_packet=1073741824
+    command: --max_allowed_packet=1073741824 --default-time-zone='+07:00'
 
   # phpMyAdmin
   phpmyadmin:

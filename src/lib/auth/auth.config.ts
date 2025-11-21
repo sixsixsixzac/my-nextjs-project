@@ -23,28 +23,50 @@ export const authConfig: NextAuthOptions = {
           throw new Error('Invalid credentials')
         }
 
-        const user = await prisma.user.findUnique({
+        // Find user in UserProfile table (matches the PHP member table)
+        const user = await prisma.userProfile.findFirst({
           where: { email: credentials.email }
         })
 
-        if (!user || !user.password) {
+        if (!user || !user.pWord) {
           throw new Error('Invalid credentials')
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
+        const password = credentials.password
+        const storedPassword = user.pWord
+
+        // Check if it's an old password format (plain text or base64 encoded)
+        const isOldPassword = 
+          storedPassword === password || 
+          storedPassword === Buffer.from(password).toString('base64')
+
+        let isPasswordValid = false
+
+        if (isOldPassword) {
+          // Old password format detected - upgrade to bcrypt hash
+          isPasswordValid = true
+          
+          // Upgrade password to bcrypt hash
+          const hashedPassword = await bcrypt.hash(password, 10)
+          
+          await prisma.userProfile.update({
+            where: { id: user.id },
+            data: { pWord: hashedPassword }
+          })
+        } else {
+          // Check against bcrypt hash (new password format)
+          isPasswordValid = await bcrypt.compare(password, storedPassword)
+        }
 
         if (!isPasswordValid) {
           throw new Error('Invalid credentials')
         }
 
         return {
-          id: user.id,
+          id: user.id.toString(),
           email: user.email,
-          name: user.name,
-          image: user.image
+          name: user.displayName || user.uName,
+          image: user.userImg !== 'none.png' ? `/images/${user.userImg}` : null
         }
       }
     })

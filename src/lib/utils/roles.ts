@@ -6,6 +6,12 @@ export const ROLES = {
   USER: "user" as const,
 } as const
 
+export enum UserRoleEnum {
+  USER = 0,
+  WRITER = 6,
+  ADMIN = 7,
+}
+
 export function hasRole(userRole: UserRole | undefined, requiredRole: UserRole): boolean {
   if (!userRole) return false
   
@@ -50,6 +56,38 @@ export function getRoleBadgeVariant(role: UserRole | undefined): "default" | "se
     case "writer":
       return "default"
     case "user":
+      return "secondary"
+    default:
+      return "secondary"
+  }
+}
+
+export function getRoleLabelFromEnum(role: UserRoleEnum | number | undefined): string {
+  switch (role) {
+    case UserRoleEnum.ADMIN:
+    case 7:
+      return "Admin"
+    case UserRoleEnum.WRITER:
+    case 6:
+      return "Writer"
+    case UserRoleEnum.USER:
+    case 0:
+      return "User"
+    default:
+      return "Guest"
+  }
+}
+
+export function getRoleBadgeVariantFromEnum(role: UserRoleEnum | number | undefined): "default" | "secondary" | "destructive" {
+  switch (role) {
+    case UserRoleEnum.ADMIN:
+    case 7:
+      return "destructive"
+    case UserRoleEnum.WRITER:
+    case 6:
+      return "default"
+    case UserRoleEnum.USER:
+    case 0:
       return "secondary"
     default:
       return "secondary"

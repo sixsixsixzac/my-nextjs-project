@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import { OptimizedImage } from "@/components/common/OptimizedImage";
 import {
   Breadcrumb,
@@ -14,8 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   UserPlus,
   Share2,
@@ -23,9 +22,9 @@ import {
   FileText,
   Eye,
   Info,
-  ChevronDown,
-  ShoppingCart,
 } from "lucide-react";
+import { EpisodeList } from "./EpisodeList";
+import { ShareDialog } from "@/components/common/ShareDialog";
 
 interface CartoonDetailPageProps {
   type: "manga" | "novel";
@@ -44,9 +43,12 @@ interface CartoonDetailPageProps {
   };
   description: string;
   episodes: Array<{
-    id: number;
+    uuid: string;
     number: number;
     title: string;
+    price: number;
+    isOwned?: boolean;
+    lockAfterDatetime?: Date | string | null;
   }>;
   uuid?: string;
 }
@@ -61,7 +63,11 @@ export function CartoonDetailPage({
   episodes,
   uuid,
 }: CartoonDetailPageProps) {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
   const shareText = type === "manga" ? "แชร์มังงะ" : "แชร์นิยาย";
+  const [checkedEpisodes, setCheckedEpisodes] = useState<Set<string>>(new Set());
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   
   // Generate structured data for SEO
   // Use relative URL to avoid hydration mismatch
@@ -182,10 +188,12 @@ export function CartoonDetailPage({
                     </Link>
                   </div>
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white shrink-0" aria-label="Follow this series">
-                  <UserPlus className="size-4" aria-hidden="true" />
-                  <span className="text-sm sm:text-base">+ ติดตาม</span>
-                </Button>
+                {isLoggedIn && (
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white shrink-0" aria-label="Follow this series">
+                    <UserPlus className="size-4" aria-hidden="true" />
+                    <span className="text-sm sm:text-base">+ ติดตาม</span>
+                  </Button>
+                )}
               </div>
             </header>
 
@@ -247,11 +255,16 @@ export function CartoonDetailPage({
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <Button variant="default" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
-                <Share2 className="size-4" />
-                <span className="text-sm sm:text-base">{shareText}</span>
+              <Button 
+                variant="default" 
+                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto cursor-pointer"
+                onClick={() => setShareDialogOpen(true)}
+                aria-label={shareText}
+              >
+                <Share2 className="size-4 text-white" />
+                <span className="text-sm sm:text-base text-white">{shareText}</span>
               </Button>
-              <Button variant="outline" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto" disabled={!isLoggedIn}>
                 <Heart className="size-4" />
                 <span className="text-sm sm:text-base">เพิ่มเข้าชั้นหนังสือ</span>
               </Button>
@@ -265,51 +278,28 @@ export function CartoonDetailPage({
             <h2 id="episodes-heading" className="text-xl sm:text-2xl font-bold text-foreground">
               ตอนทั้งหมด {stats.episodes} ตอน
             </h2>
-            <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
-              <div className="text-sm sm:text-base text-green-500 font-semibold" aria-label="Total price">ราคารวม: 0</div>
-              <Button className="bg-green-600 hover:bg-green-700 text-white shrink-0" aria-label="Purchase selected episodes">
-                <ShoppingCart className="size-4" aria-hidden="true" />
-                <span className="text-sm sm:text-base">ซื้อ ตอน</span>
-              </Button>
-            </div>
           </div>
 
-          <p className="text-sm sm:text-base text-muted-foreground">เลือกตอนที่ต้องการซื้อ</p>
+          {isLoggedIn && (
+            <p className="text-sm sm:text-base text-muted-foreground">เลือกตอนที่ต้องการซื้อ</p>
+          )}
 
-          {/* Episode Groups */}
-          <Collapsible defaultOpen={false}>
-            <CollapsibleTrigger asChild>
-              <Card className="bg-muted/50 p-3 sm:p-4 cursor-pointer hover:bg-muted transition-colors">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <Checkbox className="shrink-0" />
-                    <span className="font-medium text-sm sm:text-base text-foreground truncate">
-                      ตอนที่ {episodes[0]?.number} - {episodes[episodes.length - 1]?.number}
-                    </span>
-                  </div>
-                  <ChevronDown className="size-4 sm:size-5 text-muted-foreground shrink-0" />
-                </div>
-              </Card>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-                {episodes.map((episode) => (
-                  <Card
-                    key={episode.id}
-                    className="p-2 sm:p-3 cursor-pointer hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <Checkbox className="shrink-0" />
-                      <span className="text-xs sm:text-sm text-foreground truncate">{episode.title}</span>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          <EpisodeList 
+            episodes={episodes} 
+            type={type} 
+            uuid={uuid}
+            checkedEpisodes={checkedEpisodes}
+            onCheckedEpisodesChange={setCheckedEpisodes}
+          />
         </section>
         </div>
       </article>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+      />
     </>
   );
 }

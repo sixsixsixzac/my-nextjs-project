@@ -1,8 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,13 +17,15 @@ import {
 import { User, Settings, LogOut, BookOpen } from "lucide-react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCoins } from "@fortawesome/free-solid-svg-icons"
+import { UserRoleEnum, getRoleLabelFromEnum, getRoleBadgeVariantFromEnum } from "@/lib/utils/roles"
 
 interface UserDropdownMenuProps {
   user?: {
-    nickname?: string
+    display_name?: string
     email?: string
     avatar?: string
     points?: number
+    role?: UserRoleEnum | number
   }
   onLogout?: () => void
   profileUrl?: string
@@ -30,15 +35,8 @@ interface UserDropdownMenuProps {
   onTopup?: () => void
 }
 
-const defaultUser = {
-  nickname: "Nickname",
-  email: "user@example.com",
-  avatar: "",
-  points: 1250,
-}
-
 export function UserDropdownMenu({
-  user = defaultUser,
+  user,
   onLogout,
   profileUrl = "/profile",
   mediaUrl = "/media",
@@ -46,37 +44,60 @@ export function UserDropdownMenu({
   topupUrl = "/topup",
   onTopup,
 }: UserDropdownMenuProps) {
-  const displayUser = { ...defaultUser, ...user }
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    if (onLogout) {
+      onLogout()
+    } else {
+      await signOut()
+
+    }
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 gap-2 px-2 cursor-pointer">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={displayUser.avatar} alt={displayUser.nickname} />
+            <AvatarImage src={user.avatar} alt={user.display_name} />
             <AvatarFallback>
               <User className="h-4 w-4" />
             </AvatarFallback>
           </Avatar>
-          <span className="hidden sm:inline-block">{displayUser.nickname}</span>
+          <span className="hidden sm:inline-block">{user.display_name}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>
+        <DropdownMenuLabel className="relative">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={displayUser.avatar} alt={displayUser.nickname} />
+              <AvatarImage src={user.avatar} alt={user.display_name} />
               <AvatarFallback>
                 <User className="h-5 w-5" />
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col space-y-0.5">
-              <p className="text-sm font-medium leading-none">{displayUser.nickname}</p>
+            <div className="flex flex-col space-y-0.5 flex-1">
+              <p className="text-sm font-medium leading-none">
+                {user.display_name}
+              </p>
               <p className="text-xs leading-none text-muted-foreground">
-                {displayUser.email}
+                {user.email}
               </p>
             </div>
           </div>
+          {user.role !== undefined && (
+            <Badge
+              variant={getRoleBadgeVariantFromEnum(user.role)}
+              className="absolute top-0 right-0"
+            >
+              {getRoleLabelFromEnum(user.role)}
+            </Badge>
+          )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <div className="px-2 py-2 mx-2 my-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 rounded-md border border-yellow-200 dark:border-yellow-800">
@@ -87,7 +108,7 @@ export function UserDropdownMenu({
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">
-                  {displayUser.points?.toLocaleString()}
+                  {user.points?.toLocaleString() || "0"}
                 </span>
               </div>
             </div>
@@ -145,7 +166,7 @@ export function UserDropdownMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className=" transition-colors hover:bg-destructive/10 hover:text-destructive rounded-sm cursor-pointer"
-          onClick={onLogout}
+          onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Log out

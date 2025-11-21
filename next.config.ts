@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-    qualities: [70, 85],
+    qualities: [70, 85, 90],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
   },

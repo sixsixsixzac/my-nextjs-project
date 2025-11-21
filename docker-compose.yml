@@ -9,6 +9,7 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-pekotoon_db}
       MYSQL_USER: ${MYSQL_USER:-admin_web}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-admin_web}
+      TZ: Asia/Bangkok
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
@@ -20,7 +21,7 @@ services:
       retries: 5
     networks:
       - app-network
-    command: --max_allowed_packet=1073741824
+    command: --max_allowed_packet=1073741824 --default-time-zone='+07:00'
 
   # phpMyAdmin
   phpmyadmin:
@@ -76,6 +77,7 @@ services:
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - JWT_SECRET=${JWT_SECRET}
+      - TZ=Asia/Bangkok
     depends_on:
       mysql:
         condition: service_healthy
