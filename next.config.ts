@@ -19,12 +19,6 @@ const nextConfig: NextConfig = {
         hostname: 'api.dicebear.com',
         pathname: '/**',
       },
-      // Add more image domains as needed for your production images
-      // {
-      //   protocol: 'https',
-      //   hostname: 'your-cdn-domain.com',
-      //   pathname: '/**',
-      // },
     ],
     qualities: [75, 85],
   },

@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
-import { memo, useState } from "react";
+import { memo } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Eye, BookOpen, CheckCircle2, Clock, Heart } from "lucide-react";
-import { cn, getBlurDataURL } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 export interface CartoonCardProps {
   id: string;
@@ -51,10 +51,6 @@ function CartoonCardComponent({
   href,
   type,
 }: CartoonCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const isDicebearImage = coverImage?.includes('api.dicebear.com');
-  
   // Generate href from type and uuid if href is not provided
   const generatedHref = href || (type ? `/${type}/${uuid}` : undefined);
   
@@ -69,51 +65,16 @@ function CartoonCardComponent({
     >
       {/* Cover Image Container */}
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted">
-        {!imageError ? (
-          <Image
-            src={coverImage}
-            alt={`${title} cover image`}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className={cn(
-              "object-cover transition-opacity duration-500",
-              imageLoaded ? "opacity-100" : "opacity-0"
-            )}
-            loading={priority ? "eager" : "lazy"}
-            priority={priority}
-            fetchPriority={priority ? "high" : "auto"}
-            quality={85}
-            placeholder="blur"
-            blurDataURL={getBlurDataURL()}
-            unoptimized={isDicebearImage}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => {
-              setImageError(true);
-              setImageLoaded(true);
-            }}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <div className="text-center p-4">
-              <BookOpen className="size-12 mx-auto text-muted-foreground/50 mb-2" />
-              <p className="text-xs text-muted-foreground/70">{title}</p>
-            </div>
-          </div>
-        )}
-        {/* Blurred overlay that fades out when image loads - more performant than blurring the full image */}
-        {!imageError && (
-          <div
-            className={cn(
-              "absolute inset-0 bg-cover bg-center transition-opacity duration-500 pointer-events-none",
-              imageLoaded ? "opacity-0" : "opacity-100"
-            )}
-            style={{
-              backgroundImage: `url(${coverImage})`,
-              filter: "blur(20px)",
-              transform: "scale(1.1)", // Slight scale to hide blur edges
-            }}
-          />
-        )}
+        <OptimizedImage
+          src={coverImage}
+          alt={`${title} cover image`}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          priority={priority}
+          quality={85}
+          fallbackText={title}
+          itemProp="image"
+        />
         
         {/* New Badge */}
         {isNew && (
