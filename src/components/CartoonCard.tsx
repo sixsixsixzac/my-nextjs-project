@@ -8,6 +8,7 @@ import { cn, getBlurDataURL } from "@/lib/utils";
 
 export interface CartoonCardProps {
   id: string;
+  uuid: string;
   title: string;
   coverImage: string;
   author: {
@@ -23,6 +24,8 @@ export interface CartoonCardProps {
   priority?: boolean;
   className?: string;
   href?: string;
+  type?: "manga" | "novel";
+  complete_status?: "completed" | "ongoing";
 }
 
 function formatNumber(num: number): string {
@@ -34,6 +37,7 @@ function formatNumber(num: number): string {
 
 function CartoonCardComponent({
   id,
+  uuid,
   title,
   coverImage,
   author,
@@ -45,8 +49,15 @@ function CartoonCardComponent({
   priority = false,
   className,
   href,
+  type,
 }: CartoonCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const isDicebearImage = coverImage?.includes('api.dicebear.com');
+  
+  // Generate href from type and uuid if href is not provided
+  const generatedHref = href || (type ? `/${type}/${uuid}` : undefined);
+  
   const cardContent = (
     <article
       className={cn(
@@ -58,35 +69,51 @@ function CartoonCardComponent({
     >
       {/* Cover Image Container */}
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted">
-        <Image
-          src={coverImage}
-          alt={`${title} cover image`}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          className={cn(
-            "object-cover transition-opacity duration-500",
-            imageLoaded ? "opacity-100" : "opacity-0"
-          )}
-          loading={priority ? "eager" : "lazy"}
-          priority={priority}
-          fetchPriority={priority ? "high" : "auto"}
-          quality={85}
-          placeholder="blur"
-          blurDataURL={getBlurDataURL()}
-          onLoad={() => setImageLoaded(true)}
-        />
+        {!imageError ? (
+          <Image
+            src={coverImage}
+            alt={`${title} cover image`}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={cn(
+              "object-cover transition-opacity duration-500",
+              imageLoaded ? "opacity-100" : "opacity-0"
+            )}
+            loading={priority ? "eager" : "lazy"}
+            priority={priority}
+            fetchPriority={priority ? "high" : "auto"}
+            quality={85}
+            placeholder="blur"
+            blurDataURL={getBlurDataURL()}
+            unoptimized={isDicebearImage}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageError(true);
+              setImageLoaded(true);
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+            <div className="text-center p-4">
+              <BookOpen className="size-12 mx-auto text-muted-foreground/50 mb-2" />
+              <p className="text-xs text-muted-foreground/70">{title}</p>
+            </div>
+          </div>
+        )}
         {/* Blurred overlay that fades out when image loads - more performant than blurring the full image */}
-        <div
-          className={cn(
-            "absolute inset-0 bg-cover bg-center transition-opacity duration-500 pointer-events-none",
-            imageLoaded ? "opacity-0" : "opacity-100"
-          )}
-          style={{
-            backgroundImage: `url(${coverImage})`,
-            filter: "blur(20px)",
-            transform: "scale(1.1)", // Slight scale to hide blur edges
-          }}
-        />
+        {!imageError && (
+          <div
+            className={cn(
+              "absolute inset-0 bg-cover bg-center transition-opacity duration-500 pointer-events-none",
+              imageLoaded ? "opacity-0" : "opacity-100"
+            )}
+            style={{
+              backgroundImage: `url(${coverImage})`,
+              filter: "blur(20px)",
+              transform: "scale(1.1)", // Slight scale to hide blur edges
+            }}
+          />
+        )}
         
         {/* New Badge */}
         {isNew && (
@@ -192,7 +219,7 @@ function CartoonCardComponent({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "ComicSeries",
-            "@id": `https://pekotoon.com/cartoon/${id}`,
+            "@id": `https://pekotoon.com/cartoon/${uuid}`,
             name: title,
             image: coverImage,
             author: {
@@ -212,10 +239,10 @@ function CartoonCardComponent({
     </article>
   );
 
-  if (href) {
+  if (generatedHref) {
     return (
       <Link
-        href={href}
+        href={generatedHref}
         className="block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg cursor-pointer"
         aria-label={`View ${title} cartoon`}
       >

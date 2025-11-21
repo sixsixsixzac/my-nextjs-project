@@ -8,5 +8,3 @@ generator client {
 datasource db {
   provider = "mysql"
 }
-
-// Add your models here

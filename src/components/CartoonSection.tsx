@@ -5,12 +5,13 @@ import { BehaviorSubject, combineLatest, map } from "rxjs";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Virtual } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { CartoonCard, type CartoonCardProps } from "./CartoonCard";
 import { CartoonCardSkeleton } from "./CartoonCardSkeleton";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import mockupData from "@/data/mockupCartoon.json";
+import { getAllCartoons } from "@/lib/api/mockSearchApi";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -41,42 +42,59 @@ export function CartoonSection({
   },
   className,
 }: CartoonSectionProps) {
+  const router = useRouter();
+  
   // Fetch data based on cartoonType and type
   // Backend handles ordering logic based on type
   const [items, setItems] = useState<CartoonCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Replace with actual API call
-    // const response = await fetch(`/api/cartoons?cartoonType=${cartoonType}&type=${type}`)
-    // const data = await response.json()
-    
     const fetchData = async () => {
       setIsLoading(true);
       
-      // For now, use mockup data and simulate backend ordering logic
-      const rawData = mockupData[cartoonType] as CartoonCardProps[];
-      
-      // Simulate backend ordering based on type
-      // In production, this logic will be handled by the backend
-      let sortedData = [...rawData];
-      switch (type) {
-        case "popular":
-          sortedData.sort((a, b) => (b.views || 0) - (a.views || 0));
-          break;
-        case "latest":
-          sortedData.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-          break;
-        case "trending":
-          sortedData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-          break;
-        default:
-          // Default to views if type is not recognized
-          sortedData.sort((a, b) => (b.views || 0) - (a.views || 0));
+      try {
+        // Fetch all cartoons from JSONPlaceholder
+        const allCartoons = await getAllCartoons();
+        
+        // Filter by cartoonType
+        const filteredData = allCartoons.filter((item) => {
+          if (cartoonType === "manga") {
+            return item.type === "manga" || !item.id.startsWith("n");
+          } else {
+            return item.type === "novel" || item.id.startsWith("n");
+          }
+        });
+        
+        // Simulate backend ordering based on type
+        // In production, this logic will be handled by the backend
+        let sortedData = [...filteredData];
+        switch (type) {
+          case "popular":
+            sortedData.sort((a, b) => (b.views || 0) - (a.views || 0));
+            break;
+          case "latest":
+            sortedData.sort((a, b) => {
+              const aId = parseInt(a.id.replace("n", ""));
+              const bId = parseInt(b.id.replace("n", ""));
+              return bId - aId;
+            });
+            break;
+          case "trending":
+            sortedData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+            break;
+          default:
+            // Default to views if type is not recognized
+            sortedData.sort((a, b) => (b.views || 0) - (a.views || 0));
+        }
+        
+        setItems(sortedData);
+      } catch (error) {
+        console.error("Error fetching cartoons:", error);
+        setItems([]);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setItems(sortedData);
-      setIsLoading(false);
     };
 
     fetchData();
@@ -303,11 +321,29 @@ export function CartoonSection({
       }} />
 
       {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
-        {description && (
-          <p className="text-muted-foreground text-sm">{description}</p>
-        )}
+      <div className="mb-6 flex items-center justify-between">
+        {/* Left Section - Title and Description */}
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
+          {description && (
+            <p className="text-muted-foreground text-sm">{description}</p>
+          )}
+        </div>
+        
+        {/* Right Section - Show More Button */}
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground flex items-center cursor-pointer"
+            onClick={() => {
+              router.push(`/search?cartoonType=${cartoonType}&type=${type}`);
+            }}
+          >
+            ดูเพิ่มเติม
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Carousel Container */}
@@ -392,10 +428,11 @@ export function CartoonSection({
               const isLoaded = loadedItems.has(index);
               
               return (
-                <SwiperSlide key={item.id} virtualIndex={index}>
+                <SwiperSlide key={item.uuid} virtualIndex={index}>
                   {isLoaded ? (
                     <CartoonCard
                       {...item}
+                      type={cartoonType}
                       priority={index < (itemsPerView.desktop ?? 5)}
                     />
                   ) : (
