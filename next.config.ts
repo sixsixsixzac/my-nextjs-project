@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-    qualities: [75, 85],
+    qualities: [70, 85],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
   },
@@ -50,6 +50,8 @@ const nextConfig: NextConfig = {
   },
   // Compress output
   compress: true,
+  // Optimize production builds (source maps disabled for smaller bundles)
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

@@ -1,7 +1,7 @@
 services:
-  # MySQL Database
+  # MariaDB Database
   mysql:
-    image: mysql:8.0
+    image: mariadb:11.4
     container_name: nextjs-mysql
     restart: unless-stopped
     environment:
@@ -20,7 +20,7 @@ services:
       retries: 5
     networks:
       - app-network
-    command: --default-authentication-plugin=mysql_native_password
+    command: --max_allowed_packet=1073741824
 
   # phpMyAdmin
   phpmyadmin:
@@ -33,6 +33,7 @@ services:
       PMA_USER: root
       PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      UPLOAD_LIMIT: 1G
     ports:
       - "${PHPMYADMIN_PORT:-8080}:80"
     depends_on:

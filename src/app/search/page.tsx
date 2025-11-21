@@ -1,23 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback, Suspense, useRef } from "react";
-import {
-  BehaviorSubject,
-  combineLatest,
-  debounceTime,
-  distinctUntilChanged,
-  map,
-  switchMap,
-} from "rxjs";
-import { SearchFilters } from "@/components/search/SearchFilters";
+import { SearchFilters } from "@/app/search/filter";
 import { SearchResults } from "@/components/search/SearchResults";
-import {
-  searchCartoons,
-  type SearchFilters as SearchFiltersType,
-  type SearchResponse,
-} from "@/lib/api/mockSearchApi";
+import { searchCartoons } from "@/lib/api/search";
+import type { SearchFilters as SearchFiltersType, SearchResponse } from "@/lib/types/search";
 import { CartoonCardProps } from "@/components/CartoonCard";
 import { useSearchParams } from "next/navigation";
+
+// Lazy load RxJS to reduce initial bundle size and main thread work
+const loadRxJS = () => import("rxjs").then((rxjs) => ({
+  BehaviorSubject: rxjs.BehaviorSubject,
+  combineLatest: rxjs.combineLatest,
+  debounceTime: rxjs.debounceTime,
+  distinctUntilChanged: rxjs.distinctUntilChanged,
+  map: rxjs.map,
+  switchMap: rxjs.switchMap,
+}));
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
@@ -26,6 +25,16 @@ function SearchPageContent() {
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [rxjsLoaded, setRxjsLoaded] = useState(false);
+  const rxjsRef = useRef<Awaited<ReturnType<typeof loadRxJS>> | null>(null);
+
+  // Lazy load RxJS on mount
+  useEffect(() => {
+    loadRxJS().then((rxjs) => {
+      rxjsRef.current = rxjs;
+      setRxjsLoaded(true);
+    });
+  }, []);
 
   // Scroll to top when component mounts or search params change
   useEffect(() => {
@@ -46,89 +55,99 @@ function SearchPageContent() {
   
   const [filters, setFilters] = useState<SearchFiltersType>(initialFilters);
 
-  // RxJS subjects for filters
-  const name$ = useMemo(() => new BehaviorSubject<string>(""), []);
-  
-  // Filters subject that emits the entire filter object
-  const filtersSubject$ = useMemo(
-    () => new BehaviorSubject<SearchFiltersType>(filters),
-    []
-  );
+  // RxJS subjects for filters - only create after RxJS is loaded, use refs to persist
+  const name$Ref = useRef<any>(null);
+  const filtersSubject$Ref = useRef<any>(null);
+  const scrollTrigger$Ref = useRef<any>(null);
 
-  // Scroll trigger subject for infinite scroll
-  const scrollTrigger$ = useMemo(
-    () => new BehaviorSubject<number>(1),
-    []
-  );
+  // Initialize subjects once when RxJS loads
+  useEffect(() => {
+    if (rxjsLoaded && rxjsRef.current && !name$Ref.current) {
+      name$Ref.current = new rxjsRef.current.BehaviorSubject<string>("");
+      filtersSubject$Ref.current = new rxjsRef.current.BehaviorSubject<SearchFiltersType>(filters);
+      scrollTrigger$Ref.current = new rxjsRef.current.BehaviorSubject<number>(1);
+    }
+  }, [rxjsLoaded, filters]);
+
+  const name$ = name$Ref.current;
+  const filtersSubject$ = filtersSubject$Ref.current;
+  const scrollTrigger$ = scrollTrigger$Ref.current;
 
   // Debounced name stream
-  const debouncedName$ = useMemo(
-    () => name$.pipe(debounceTime(300), distinctUntilChanged()),
-    [name$]
-  );
+  const debouncedName$ = useMemo(() => {
+    if (!name$ || !rxjsRef.current) return null;
+    return name$.pipe(
+      rxjsRef.current.debounceTime(300),
+      rxjsRef.current.distinctUntilChanged()
+    );
+  }, [name$, rxjsLoaded]);
 
   // Combined filters stream with debounced name
-  const filters$ = useMemo(
-    () =>
-      combineLatest([
-        debouncedName$,
-        filtersSubject$,
-      ]).pipe(
-        map(([name, currentFilters]) => ({
+  const filters$ = useMemo(() => {
+    if (!debouncedName$ || !filtersSubject$ || !rxjsRef.current) return null;
+    return (rxjsRef.current.combineLatest([
+      debouncedName$,
+      filtersSubject$,
+    ]) as any).pipe(
+      rxjsRef.current.map((values: [string, SearchFiltersType]) => {
+        const [name, currentFilters] = values;
+        return {
           ...currentFilters,
           name: name || undefined,
-        }))
-      ),
-    [debouncedName$, filtersSubject$]
-  );
+        };
+      })
+    );
+  }, [debouncedName$, filtersSubject$, rxjsLoaded]);
 
   // Track previous filter values to detect changes
   const prevFiltersRef = useRef<string>("");
   const isInitialLoadRef = useRef(true);
   
   // Merge filters with scroll trigger and reset pagination when filters change
-  const searchParams$ = useMemo(
-    () =>
-      combineLatest([filters$, scrollTrigger$]).pipe(
-        switchMap(([filterParams, page]) => {
-          const filterKey = JSON.stringify(filterParams);
-          const filtersChanged = prevFiltersRef.current !== filterKey && !isInitialLoadRef.current;
-          
-          // Update previous filters
-          prevFiltersRef.current = filterKey;
-          
-          // On initial load or filter change, always use page 1
-          if (isInitialLoadRef.current) {
-            isInitialLoadRef.current = false;
-            return searchCartoons({
-              ...filterParams,
-              page: 1,
-              limit: 20,
-            });
-          }
-          
-          if (filtersChanged) {
-            // Filters changed - reset to page 1
-            return searchCartoons({
-              ...filterParams,
-              page: 1,
-              limit: 20,
-            });
-          }
-
-          // Load more - use the page from scroll trigger
+  const searchParams$ = useMemo(() => {
+    if (!filters$ || !scrollTrigger$ || !rxjsRef.current) return null;
+    return (rxjsRef.current.combineLatest([filters$, scrollTrigger$]) as any).pipe(
+      rxjsRef.current.switchMap((values: [SearchFiltersType, number]) => {
+        const [filterParams, page] = values;
+        const filterKey = JSON.stringify(filterParams);
+        const filtersChanged = prevFiltersRef.current !== filterKey && !isInitialLoadRef.current;
+        
+        // Update previous filters
+        prevFiltersRef.current = filterKey;
+        
+        // On initial load or filter change, always use page 1
+        if (isInitialLoadRef.current) {
+          isInitialLoadRef.current = false;
           return searchCartoons({
             ...filterParams,
-            page: page,
+            page: 1,
             limit: 20,
           });
-        })
-      ),
-    [filters$, scrollTrigger$]
-  );
+        }
+        
+        if (filtersChanged) {
+          // Filters changed - reset to page 1
+          return searchCartoons({
+            ...filterParams,
+            page: 1,
+            limit: 20,
+          });
+        }
+
+        // Load more - use the page from scroll trigger
+        return searchCartoons({
+          ...filterParams,
+          page: page,
+          limit: 20,
+        });
+      })
+    );
+  }, [filters$, scrollTrigger$, rxjsLoaded]);
 
   // Subscribe to search results
   useEffect(() => {
+    if (!searchParams$) return;
+    
     const subscription = searchParams$.subscribe({
       next: (response: SearchResponse) => {
         if (response.page === 1) {
@@ -143,7 +162,7 @@ function SearchPageContent() {
         setCurrentPage(response.page);
         setIsLoading(false);
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error("Search error:", error);
         setIsLoading(false);
       },
@@ -152,18 +171,22 @@ function SearchPageContent() {
     return () => subscription.unsubscribe();
   }, [searchParams$]);
   
-  // Initial load on mount
+  // Initial load on mount - wait for RxJS to load
   useEffect(() => {
+    if (!rxjsLoaded || !name$ || !filtersSubject$ || !scrollTrigger$) return;
+    
     setIsLoading(true);
     // Trigger initial search by emitting filter values
     name$.next(filters.name || "");
     filtersSubject$.next(filters);
     scrollTrigger$.next(1);
-  }, []);
+  }, [rxjsLoaded, name$, filtersSubject$, scrollTrigger$, filters]);
 
   // Handle filter changes
   const handleFiltersChange = useCallback(
     (newFilters: SearchFiltersType) => {
+      if (!name$ || !filtersSubject$ || !scrollTrigger$) return;
+      
       setFilters(newFilters);
       setIsLoading(true);
 
@@ -183,12 +206,12 @@ function SearchPageContent() {
 
   // Handle load more
   const handleLoadMore = useCallback(() => {
-    if (!isLoading && hasMore) {
-      setIsLoading(true);
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      scrollTrigger$.next(nextPage);
-    }
+    if (!scrollTrigger$ || isLoading || !hasMore) return;
+    
+    setIsLoading(true);
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    scrollTrigger$.next(nextPage);
   }, [isLoading, hasMore, currentPage, scrollTrigger$]);
 
   return (
@@ -220,12 +243,18 @@ function SearchPageContent() {
         </div>
       )}
 
-      <SearchResults
-        items={results}
-        isLoading={isLoading}
-        hasMore={hasMore}
-        onLoadMore={handleLoadMore}
-      />
+      {!rxjsLoaded ? (
+        <div className="text-center py-12 text-muted-foreground">
+          กำลังโหลด...
+        </div>
+      ) : (
+        <SearchResults
+          items={results}
+          isLoading={isLoading}
+          hasMore={hasMore}
+          onLoadMore={handleLoadMore}
+        />
+      )}
     </div>
   );
 }

@@ -3,8 +3,562 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = []
 }
 
 datasource db {
   provider = "mysql"
+}
+
+// Enums
+enum AnnouncementStatus {
+  draft
+  published
+  archived
+}
+
+enum AnnouncementPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum CartoonType {
+  manga
+  novel
+}
+
+enum CartoonStatus {
+  active
+  deleted
+}
+
+enum CommentStatus {
+  active
+  deleted
+  hidden
+}
+
+enum ImageProtection {
+  on
+  off
+}
+
+enum PublishStatus {
+  now
+  schedule
+  hide
+}
+
+enum ShopItemStatus {
+  on
+  off
+}
+
+enum TopupPackageStatus {
+  deleted
+  show
+  hide
+}
+
+enum TransactionStatus {
+  pending
+  completed
+  failed
+}
+
+enum UserDetailStatus {
+  pending
+  approve
+  reject
+}
+
+enum WithdrawStatus {
+  success
+  deny
+  pending
+  deleted
+}
+
+// Models
+model Announcement {
+  id          BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  title       String               @db.VarChar(255)
+  content     String               @db.Text
+  status      AnnouncementStatus   @default(draft)
+  priority    AnnouncementPriority @default(normal)
+  publishedAt DateTime?            @map("published_at") @db.Timestamp
+  expiresAt   DateTime?            @map("expires_at") @db.Timestamp
+  createdBy   Int                  @map("created_by") @db.Int
+  updatedBy   Int?                 @map("updated_by") @db.Int
+  createdAt   DateTime?            @map("created_at") @db.Timestamp
+  updatedAt   DateTime?            @updatedAt @map("updated_at") @db.Timestamp
+
+  creator UserProfile  @relation("AnnouncementCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  updater UserProfile? @relation("AnnouncementUpdater", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([priority, publishedAt])
+  @@map("announcements")
+}
+
+model AuditLog {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  userId       Int?      @map("user_id") @db.Int
+  action       String    @db.VarChar(100)
+  resourceType String?   @map("resource_type") @db.VarChar(50)
+  resourceId   String?   @map("resource_id") @db.VarChar(100)
+  ipAddress    String?   @map("ip_address") @db.VarChar(45)
+  userAgent    String?   @map("user_agent") @db.Text
+  requestData  Json?     @map("request_data")
+  responseData Json?     @map("response_data")
+  status       String    @default("success") @db.VarChar(20)
+  message      String?   @db.Text
+  metadata     Json?     @db.Json
+  createdAt    DateTime? @map("created_at") @db.Timestamp
+  updatedAt    DateTime? @updatedAt @map("updated_at") @db.Timestamp
+
+  user UserProfile? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt, action])
+  @@index([userId, createdAt])
+  @@index([resourceType, resourceId])
+  @@index([ipAddress, createdAt])
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([ipAddress])
+  @@index([status])
+  @@map("audit_logs")
+}
+
+model Cache {
+  key        String @id @db.VarChar(255)
+  value      String @db.MediumText
+  expiration Int    @db.Int
+
+  @@map("cache")
+}
+
+model Carousel {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title         String    @db.VarChar(255)
+  subtitle      String?   @db.VarChar(255)
+  image         String    @db.VarChar(255)
+  link          String?   @db.VarChar(255)
+  textAlignment String    @default("center-center") @map("text_alignment") @db.VarChar(255)
+  isActive      Boolean   @default(true) @map("is_active")
+  sortOrder     Int       @default(0) @map("sort_order") @db.Int
+  createdAt     DateTime? @map("created_at") @db.Timestamp
+  updatedAt     DateTime? @updatedAt @map("updated_at") @db.Timestamp
+
+  @@map("carousels")
+}
+
+model Cartoon {
+  pId              Int           @id @default(autoincrement()) @map("p_id") @db.Int
+  title            String        @db.LongText
+  description      String        @db.LongText
+  coverImage       String        @map("cover_image") @db.VarChar(100)
+  authorId         Int           @map("author_id") @db.Int
+  pDate            DateTime      @default(dbgenerated("CURRENT_TIMESTAMP")) @map("p_date") @db.DateTime
+  updatedAt        DateTime      @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.DateTime
+  createdAt        DateTime      @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.DateTime
+  uuid             String       @db.Char(36)
+  categoryMain     Int           @default(1) @map("category_main") @db.TinyInt
+  categorySub      Int           @default(2) @map("category_sub") @db.Int
+  type             CartoonType   @default(manga)
+  originType       Int           @default(3) @map("origin_type") @db.Int
+  ageRate          String        @default("all") @map("age_rate")
+  publishStatus    Int           @default(0) @map("publish_status") @db.Int
+  completionStatus Int           @default(0) @map("completion_status") @db.Int
+  status           CartoonStatus @default(active)
+  banned           String?       @db.LongText
+
+  author           UserProfile      @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  episodes         MangaEp[]
+  categories       MangaCategory[]
+  comments         CartoonComment[]
+  favorites        MangaFavorite[]
+  episodeViews     MangaEpView[]
+  episodePurchases EpShop[]
+
+  @@index([title(length: 255)])
+  @@index([authorId])
+  @@index([uuid])
+  @@map("cartoons")
+}
+
+model CartoonComment {
+  id           BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  cartoonId    Int           @map("cartoon_id") @db.Int
+  episodeId    Int?          @map("episode_id") @db.Int
+  userId       BigInt        @map("user_id") @db.UnsignedBigInt
+  parentId     BigInt?       @map("parent_id") @db.UnsignedBigInt
+  content      String        @db.Text
+  status       CommentStatus @default(active)
+  likesCount   Int           @default(0) @map("likes_count") @db.UnsignedInt
+  repliesCount BigInt        @default(0) @map("replies_count") @db.UnsignedBigInt
+  createdAt    DateTime?     @map("created_at") @db.Timestamp
+  updatedAt    DateTime?     @updatedAt @map("updated_at") @db.Timestamp
+
+  cartoon Cartoon          @relation(fields: [cartoonId], references: [pId], onDelete: Cascade)
+  parent  CartoonComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies CartoonComment[] @relation("CommentReplies")
+  likes   CommentLike[]
+
+  @@map("cartoon_comments")
+}
+
+model Category {
+  id           Int      @id @default(autoincrement()) @db.Int
+  categoryName String   @map("category_name") @db.VarChar(255)
+  status       Int      @default(1) @db.TinyInt
+  createdAt    DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.DateTime
+
+  mangaCategories MangaCategory[]
+
+  @@map("categories")
+}
+
+model CommentLike {
+  id        BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  commentId BigInt    @map("comment_id") @db.UnsignedBigInt
+  userId    BigInt    @map("user_id") @db.UnsignedBigInt
+  createdAt DateTime? @map("created_at") @db.Timestamp
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp
+
+  comment CartoonComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@map("comment_likes")
+}
+
+model EpShop {
+  epsId             Int       @id @default(autoincrement()) @map("eps_id") @db.Int
+  epId              Int?      @map("ep_id") @db.Int
+  epNo              Int       @map("ep_no") @db.Int
+  pId               Int       @map("p_id") @db.Int
+  point             Float     @default(0) @db.Float
+  remainPoint       Float     @default(0) @map("remain_point") @db.Float
+  userId            Int       @map("user_id") @db.Int
+  lockAfterDatetime DateTime? @map("lock_after_datetime") @db.DateTime
+  createdAt         DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.DateTime
+
+  episode MangaEp?    @relation(fields: [epId], references: [epId], onDelete: Cascade, onUpdate: Cascade)
+  cartoon Cartoon     @relation(fields: [pId], references: [pId], onDelete: Cascade)
+  user    UserProfile @relation(fields: [userId], references: [id])
+
+  @@index([epNo])
+  @@index([pId])
+  @@index([userId])
+  @@index([epId])
+  @@map("ep_shop")
+}
+
+model MangaCategory {
+  id         Int  @id @default(autoincrement()) @db.Int
+  pId        Int? @map("p_id") @db.Int
+  categoryId Int? @map("category_id") @db.Int
+
+  cartoon  Cartoon?  @relation(fields: [pId], references: [pId], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([pId])
+  @@index([categoryId])
+  @@map("manga_categories")
+}
+
+model MangaEp {
+  epId             Int             @id @default(autoincrement()) @map("ep_id") @db.Int
+  pId              Int             @map("p_id") @db.Int
+  epName           String          @map("ep_name") @db.VarChar(60)
+  epContent        String?         @map("ep_content") @db.LongText
+  epNo             Int             @map("ep_no") @db.Int
+  epPrice          Int             @default(0) @map("ep_price") @db.Int
+  totalImage       Int             @map("total_image") @db.Int
+  imageProtection  ImageProtection @default(on) @map("image_protection")
+  publishStatus    PublishStatus   @default(now) @map("publish_status")
+  scheduleDatetime DateTime?       @map("schedule_datetime") @db.DateTime
+  lockDurationDays Int?            @map("lock_duration_days") @db.Int
+  status           CartoonStatus   @default(active)
+  createAt         DateTime        @default(dbgenerated("CURRENT_TIMESTAMP")) @map("create_at") @db.DateTime
+  updatedAt        DateTime        @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.DateTime
+
+  cartoon   Cartoon       @relation(fields: [pId], references: [pId], onDelete: Cascade, onUpdate: Cascade)
+  views     MangaEpView[]
+  purchases EpShop[]
+
+  @@unique([pId, epNo])
+  @@index([pId])
+  @@map("manga_ep")
+}
+
+model MangaEpImage {
+  epiId        Int    @id @default(autoincrement()) @map("epi_id") @db.Int
+  epNo         Int    @map("ep_no") @db.Int
+  pId          Int    @map("p_id") @db.Int
+  epiImageName String @map("epi_image_name") @db.VarChar(255)
+  json         Json?  @db.Json
+
+  @@index([pId, epNo])
+  @@map("manga_ep_image")
+}
+
+model MangaEpView {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  pId       Int      @map("p_id") @db.Int
+  epNo      Int      @map("ep_no") @db.Int
+  userId    BigInt?  @map("user_id") @db.UnsignedBigInt
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.Text
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamp
+
+  cartoon Cartoon  @relation(fields: [pId], references: [pId], onDelete: Cascade)
+  episode MangaEp? @relation(fields: [pId, epNo], references: [pId, epNo], onDelete: Cascade)
+
+  @@index([pId])
+  @@index([epNo])
+  @@index([createdAt])
+  @@map("manga_ep_views")
+}
+
+model MangaFavorite {
+  id        Int      @id @default(autoincrement()) @db.Int
+  pId       Int      @map("p_id") @db.Int
+  userId    Int      @map("user_id") @db.Int
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.DateTime
+
+  cartoon Cartoon @relation(fields: [pId], references: [pId], onDelete: Cascade)
+
+  @@map("manga_favorite")
+}
+
+model Migration {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int    @db.Int
+
+  @@map("migrations")
+}
+
+model Notification {
+  id             String    @id @db.Char(36)
+  type           String    @db.VarChar(255)
+  notifiableType String    @map("notifiable_type") @db.VarChar(255)
+  notifiableId   BigInt    @map("notifiable_id") @db.UnsignedBigInt
+  data           String    @db.Text
+  readAt         DateTime? @map("read_at") @db.Timestamp
+  createdAt      DateTime? @map("created_at") @db.Timestamp
+  updatedAt      DateTime? @updatedAt @map("updated_at") @db.Timestamp
+
+  @@index([notifiableType, notifiableId])
+  @@map("notifications")
+}
+
+model PasswordResetToken {
+  email     String    @id @db.VarChar(255)
+  token     String    @db.VarChar(255)
+  createdAt DateTime? @map("created_at") @db.Timestamp
+
+  @@map("password_reset_tokens")
+}
+
+model Session {
+  id           String  @id @db.VarChar(255)
+  userId       BigInt? @map("user_id") @db.UnsignedBigInt
+  ipAddress    String? @map("ip_address") @db.VarChar(45)
+  userAgent    String? @map("user_agent") @db.Text
+  payload      String  @db.LongText
+  lastActivity Int     @map("last_activity") @db.Int
+
+  @@index([userId])
+  @@index([lastActivity])
+  @@map("sessions")
+}
+
+model ShopItem {
+  itemId     Int            @id @default(autoincrement()) @map("item_id") @db.Int
+  itemTitle  String         @map("item_title") @db.VarChar(1000)
+  itemDetail String         @map("item_detail") @db.Text
+  itemPrice  BigInt         @default(0) @map("item_price") @db.BigInt
+  itemImg    String         @map("item_img") @db.VarChar(1000)
+  itemType   String         @map("item_type") @db.VarChar(30)
+  itemStatus ShopItemStatus @default(on) @map("item_status")
+
+  userItems ShopItemUser[]
+
+  @@map("shop_item")
+}
+
+model ShopItemUser {
+  siuId     Int      @id @default(autoincrement()) @map("siu_id") @db.Int
+  itemId    Int      @map("item_id") @db.Int
+  uName     String?  @map("u_name") @db.VarChar(255)
+  userId    Int?     @map("user_id") @db.Int
+  siuDate   DateTime @map("siu_date") @db.Date
+  siuTime   DateTime @map("siu_time") @db.Time
+  siuStatus String   @default("off") @map("siu_status") @db.VarChar(255)
+  itemType  String   @map("item_type") @db.VarChar(100)
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.DateTime
+
+  shopItem ShopItem @relation(fields: [itemId], references: [itemId], onDelete: Cascade)
+
+  @@map("shop_item_user")
+}
+
+model TopupPackage {
+  id         Int                @id @default(autoincrement()) @db.Int
+  coinAmount Int                @map("coin_amount") @db.Int
+  bonus      Float              @default(0) @db.Float
+  price      Decimal            @db.Decimal(10, 2)
+  status     TopupPackageStatus
+  createdAt  DateTime           @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamp
+  updatedAt  DateTime           @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.Timestamp
+
+  transactions TopupTransaction[]
+
+  @@map("topup_packages")
+}
+
+model TopupTransaction {
+  id            Int               @id @default(autoincrement()) @db.Int
+  userId        Int               @map("user_id") @db.Int
+  packageId     Int               @map("package_id") @db.Int
+  refId         String            @map("ref_id") @db.VarChar(255)
+  transactionId Int               @map("transaction_id") @db.Int
+  paymentMethod String            @map("payment_method") @db.VarChar(50)
+  amountPaid    Decimal           @map("amount_paid") @db.Decimal(10, 2)
+  coinsAdded    Int               @map("coins_added") @db.Int
+  status        TransactionStatus @default(pending)
+  createdAt     DateTime          @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamp
+  updatedAt     DateTime          @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.Timestamp
+
+  user    UserProfile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package TopupPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([packageId])
+  @@map("topup_transactions")
+}
+
+model UserBan {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  userId     Int       @map("user_id") @db.Int
+  reason     String?   @db.Text
+  unbannedAt DateTime? @map("unbanned_at") @db.Timestamp
+  createdAt  DateTime? @map("created_at") @db.Timestamp
+  updatedAt  DateTime? @updatedAt @map("updated_at") @db.Timestamp
+
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_bans")
+}
+
+model UserDetail {
+  id           BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  userId       Int              @unique @map("user_id") @db.Int
+  bankNumber   String           @map("bank_number") @db.VarChar(50)
+  bankName     String           @map("bank_name") @db.VarChar(100)
+  bankType     String?          @map("bank_type") @db.VarChar(50)
+  bankImage    String?          @map("bank_image") @db.VarChar(255)
+  userPhone    String?          @map("user_phone") @db.VarChar(20)
+  userPrefix   String?          @map("user_prefix") @db.VarChar(20)
+  firstName    String           @map("first_name") @db.VarChar(100)
+  lastName     String           @map("last_name") @db.VarChar(100)
+  fanPageLink  String?          @map("fan_page_link") @db.VarChar(500)
+  status       UserDetailStatus @default(pending)
+  rejectReason String?          @map("reject_reason") @db.Text
+  createdAt    DateTime         @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamp
+  updatedAt    DateTime         @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.Timestamp
+
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_detail")
+}
+
+model UserFollower {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  followerId  Int       @map("follower_id") @db.UnsignedInt
+  followingId Int       @map("following_id") @db.UnsignedInt
+  createdAt   DateTime? @map("created_at") @db.Timestamp
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamp
+
+  @@map("user_followers")
+}
+
+model UserProfile {
+  id                     Int       @id @default(autoincrement()) @db.Int
+  uuid                   String    @db.VarChar(1000)
+  level                  Int       @default(0) @db.TinyInt
+  uStatus                Int       @default(1) @map("u_status") @db.TinyInt
+  uName                  String    @map("u_name") @db.VarChar(50)
+  displayName            String    @map("display_name") @db.VarChar(50)
+  point                  Float     @default(0) @db.Float
+  sales                  Float     @default(0) @db.Float
+  pWord                  String    @map("p_word") @db.Text
+  uFlname                String?   @map("u_flname") @db.VarChar(255)
+  email                  String    @db.Text
+  uPhone                 String?   @map("u_phone") @db.VarChar(10)
+  userImg                String    @default("none.png") @map("user_img") @db.VarChar(100)
+  autoEpisodePurchase    Boolean   @default(false) @map("autoEpisodePurchase")
+  loadAllImages          Boolean   @default(false) @map("loadAllImages")
+  createdAt              DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.DateTime
+  updatedAt              DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.DateTime
+  googleId               String?   @map("google_id") @db.VarChar(255)
+  googleToken            String?   @map("google_token") @db.Text
+  socialMedia            String?   @map("social_media") @db.LongText
+  emailVerifiedAt        DateTime? @map("email_verified_at") @db.Timestamp
+  emailVerificationToken String?   @map("email_verification_token") @db.VarChar(255)
+  rememberToken          String?   @map("remember_token") @db.VarChar(100)
+
+  announcementsCreated Announcement[]     @relation("AnnouncementCreator")
+  announcementsUpdated Announcement[]     @relation("AnnouncementUpdater")
+  auditLogs            AuditLog[]
+  cartoons             Cartoon[]
+  episodePurchases     EpShop[]
+  topupTransactions    TopupTransaction[]
+  bans                 UserBan[]
+  detail               UserDetail?
+
+  @@index([uuid(length: 255)])
+  @@fulltext([uName])
+  @@map("user_profile")
+}
+
+model WebContact {
+  id        Int      @id @default(autoincrement()) @db.Int
+  label     String   @db.VarChar(255)
+  url       String   @db.VarChar(255)
+  iconClass String?  @map("icon_class") @db.VarChar(100)
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamp
+  updatedAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.Timestamp
+
+  @@map("web_contacts")
+}
+
+model WebSetting {
+  key       String   @id @db.VarChar(64)
+  value     String?  @db.Text
+  updatedAt DateTime @map("updated_at") @db.DateTime
+
+  @@map("web_setting")
+}
+
+model WithdrawMoney {
+  id          Int            @id @default(autoincrement()) @db.Int
+  userId      Int            @map("user_id") @db.Int
+  currentRate Int            @map("currentRate") @db.Int
+  amount      Int            @db.Int
+  fee         Decimal        @default(0.00) @db.Decimal(5, 2)
+  status      WithdrawStatus @default(pending)
+  reason      String?        @db.Text
+  updatedAt   DateTime       @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.DateTime
+  createdAt   DateTime       @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.DateTime
+
+  @@map("withdraw_money")
 }

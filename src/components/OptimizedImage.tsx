@@ -61,7 +61,6 @@ export function OptimizedImage({
     ),
     loading: priority ? ("eager" as const) : ("lazy" as const),
     priority,
-    fetchPriority: priority ? ("high" as const) : ("auto" as const),
     quality,
     placeholder: "blur" as const,
     blurDataURL: getBlurDataURL(),

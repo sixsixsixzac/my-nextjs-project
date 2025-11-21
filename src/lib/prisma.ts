@@ -1,3 +1,13 @@
+/**
+ * Prisma Client - Server Only
+ * 
+ * This module should ONLY be imported in:
+ * - Server Components
+ * - Server Actions (files with "use server")
+ * - API Routes
+ * 
+ * NEVER import this in Client Components ("use client")
+ */
 import { PrismaClient } from '@prisma/client'
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
 
@@ -13,7 +23,8 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: [],
+    errorFormat: 'minimal',
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
