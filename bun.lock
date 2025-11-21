@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "my-nextjs-project",
+      "name": "PekoWebsite",
       "dependencies": {
         "@auth/prisma-adapter": "^2.11.1",
         "@fortawesome/fontawesome-svg-core": "^7.1.0",

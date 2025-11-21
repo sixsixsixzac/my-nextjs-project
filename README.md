@@ -188,7 +188,7 @@ After starting Docker services, access phpMyAdmin at [http://localhost:8080](htt
 ## Project Structure
 
 ```
-my-nextjs-project/
+PekoWebsite/
 ├── prisma/
 │   └── schema.prisma          # Database schema
 ├── public/
