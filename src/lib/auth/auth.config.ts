@@ -82,7 +82,7 @@ export const authConfig: NextAuthOptions = {
               discord: parsed.discord || '',
               facebook: parsed.facebook || ''
             }
-          } catch (error) {
+          } catch {
             // If parsing fails, use default empty values
             socialMedia = {
               x: '',
@@ -148,7 +148,7 @@ export const authConfig: NextAuthOptions = {
                 discord: parsed.discord || '',
                 facebook: parsed.facebook || ''
               }
-            } catch (error) {
+            } catch {
               token.socialMedia = {
                 x: '',
                 instagram: '',
@@ -194,7 +194,7 @@ export const authConfig: NextAuthOptions = {
                 discord: parsed.discord || '',
                 facebook: parsed.facebook || ''
               }
-            } catch (error) {
+            } catch {
               token.socialMedia = {
                 x: '',
                 instagram: '',

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { findRouteConfig, protectedRoutes } from '@/lib/auth/route-config'
+import { findRouteConfig } from '@/lib/auth/route-config'
 import { hasRole, type UserRole } from '@/lib/utils/roles'
 
 export async function middleware(request: NextRequest) {

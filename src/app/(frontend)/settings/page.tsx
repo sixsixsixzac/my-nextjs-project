@@ -54,7 +54,7 @@ export default function SettingsPage() {
     console.log("Social links saved:", socialLinks)
   }
 
-  const handlePasswordChange = (passwordData: {
+  const handlePasswordChange = (_passwordData: {
     currentPassword: string
     newPassword: string
     confirmPassword: string

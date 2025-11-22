@@ -27,7 +27,6 @@ interface UserLayoutProps {
 export async function UserLayout({ children }: UserLayoutProps) {
   // Get user session server-side
   const sessionUser = await getCurrentUser()
-  const userRole = sessionUser?.role
 
   // Fetch full user data from database if user is logged in
   let userData = null

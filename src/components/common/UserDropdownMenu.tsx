@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -44,8 +43,6 @@ export function UserDropdownMenu({
   topupUrl = "/topup",
   onTopup,
 }: UserDropdownMenuProps) {
-  const router = useRouter()
-
   const handleLogout = async () => {
     if (onLogout) {
       onLogout()
