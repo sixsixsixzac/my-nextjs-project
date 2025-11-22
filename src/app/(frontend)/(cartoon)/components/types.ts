@@ -20,6 +20,7 @@ export interface EpisodeUnlockProps {
   episodeInfo: EpisodeInfo;
   navigation: NavigationInfo;
   userPoints?: number | null;
+  cartoonType?: "manga" | "novel";
 }
 
 export interface MangaReadProps {
@@ -27,6 +28,13 @@ export interface MangaReadProps {
   episode: string;
   buyImmediately?: boolean;
   loadFullImages?: boolean;
+  userPoints?: number | null;
+}
+
+export interface NovelReadProps {
+  cartoonUuid: string;
+  episode: string;
+  buyImmediately?: boolean;
   userPoints?: number | null;
 }
 

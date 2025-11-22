@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMangaEpisodeImages, getEpisodeInfo, getEpisodeNavigation, checkEpisodeOwnership } from "@/lib/api/cartoon";
+import { getNovelEpisodeContent, getEpisodeInfo, getEpisodeNavigation, checkEpisodeOwnership } from "@/lib/api/cartoon";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export async function GET(request: NextRequest) {
@@ -7,8 +7,6 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const cartoonUuid = searchParams.get("cartoonUuid");
     const episode = searchParams.get("episode");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "1");
 
     if (!cartoonUuid || !episode) {
       return NextResponse.json(
@@ -18,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get episode info
-    const episodeInfo = await getEpisodeInfo("manga", cartoonUuid, episode);
+    const episodeInfo = await getEpisodeInfo("novel", cartoonUuid, episode);
     if (!episodeInfo) {
       return NextResponse.json(
         { error: "Episode not found" },
@@ -37,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     if (!isOwned) {
       // Get navigation info for unlock component
-      const navigation = await getEpisodeNavigation("manga", cartoonUuid, episodeInfo.epNo);
+      const navigation = await getEpisodeNavigation("novel", cartoonUuid, episodeInfo.epNo);
       
       return NextResponse.json(
         {
@@ -55,19 +53,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get images
-    const result = await getMangaEpisodeImages(
+    // Get content
+    const result = await getNovelEpisodeContent(
       episodeInfo.pId,
-      episodeInfo.epNo,
-      page,
-      limit
+      episodeInfo.epNo
     );
 
-    // Get navigation info (only on first page load)
-    let navigation = null;
-    if (page === 1) {
-      navigation = await getEpisodeNavigation("manga", cartoonUuid, episodeInfo.epNo);
-    }
+    // Get navigation info
+    const navigation = await getEpisodeNavigation("novel", cartoonUuid, episodeInfo.epNo);
 
     return NextResponse.json({
       ...result,
@@ -78,7 +71,7 @@ export async function GET(request: NextRequest) {
       navigation,
     });
   } catch (error) {
-    console.error("Error fetching manga episode images:", error);
+    console.error("Error fetching novel episode content:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

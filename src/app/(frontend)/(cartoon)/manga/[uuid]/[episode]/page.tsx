@@ -1,6 +1,6 @@
-import { getMangaEpisodeInfo, checkMangaEpisodeOwnership, getMangaEpisodeNavigation, purchaseMangaEpisode } from "@/lib/api/cartoon";
+import { getEpisodeInfo, checkEpisodeOwnership, getEpisodeNavigation, purchaseEpisode } from "@/lib/api/cartoon";
 import { getUserData } from "@/lib/api/user";
-import { MangaRead } from "@/app/(frontend)/(cartoon)/components/MangaRead";
+import { MangaRead } from "@/app/(frontend)/(cartoon)/manga/[uuid]/[episode]/MangaRead";
 import { EpisodeUnlock } from "@/app/(frontend)/(cartoon)/components/EpisodeUnlock";
 import { notFound, redirect } from "next/navigation";
 
@@ -12,7 +12,7 @@ export default async function MangaReadingPage({
   const { uuid, episode } = await params;
 
   // Check episode ownership server-side
-  const episodeInfo = await getMangaEpisodeInfo(uuid, episode);
+  const episodeInfo = await getEpisodeInfo("manga", uuid, episode);
 
   if (!episodeInfo) {
     notFound();
@@ -21,13 +21,13 @@ export default async function MangaReadingPage({
   // Fetch user data and navigation in parallel for better performance
   const [userData, navigation] = await Promise.all([
     getUserData(),
-    getMangaEpisodeNavigation(uuid, episodeInfo.epNo),
+    getEpisodeNavigation("manga", uuid, episodeInfo.epNo),
   ]);
 
     const { userId, buyImmediately, loadFullImages, userPoints } = userData;
 
   // Check ownership after getting user data
-  const isOwned = await checkMangaEpisodeOwnership(
+  const isOwned = await checkEpisodeOwnership(
     episodeInfo.epId,
     episodeInfo.epPrice,
     userId
@@ -36,22 +36,26 @@ export default async function MangaReadingPage({
   if (!isOwned) {
     // Auto-purchase if buyImmediately is enabled and user has enough points
     if (buyImmediately && userId && userPoints !== null && userPoints >= episodeInfo.epPrice && episodeInfo.epPrice > 0) {
-      const result = await purchaseMangaEpisode(
-        userId,
-        {
+      // Get episode UUID for purchase
+      const { prisma } = await import("@/lib/prisma");
+      const episodeRecord = await prisma.mangaEp.findFirst({
+        where: {
           epId: episodeInfo.epId,
-          pId: episodeInfo.pId,
-          epNo: episodeInfo.epNo,
-          epPrice: episodeInfo.epPrice,
         },
-        userPoints
-      );
-      if (result.success) {
-        // Redirect to refresh the page and show the purchased episode with auto-purchase notification
-        redirect(`/manga/${uuid}/${episode}?autoPurchased=true&epPrice=${episodeInfo.epPrice}&epNo=${episodeInfo.epNo}`);
-      } else {
-        // If auto-purchase fails, redirect with error notification
-        redirect(`/manga/${uuid}/${episode}?autoPurchaseFailed=true&error=${encodeURIComponent(result.error || "ไม่สามารถซื้อตอนได้")}`);
+        select: {
+          uuid: true,
+        },
+      });
+
+      if (episodeRecord) {
+        const result = await purchaseEpisode([episodeRecord.uuid]);
+        if (result.success) {
+          // Redirect to refresh the page and show the purchased episode with auto-purchase notification
+          redirect(`/manga/${uuid}/${episode}?autoPurchased=true&epPrice=${episodeInfo.epPrice}&epNo=${episodeInfo.epNo}`);
+        } else {
+          // If auto-purchase fails, redirect with error notification
+          redirect(`/manga/${uuid}/${episode}?autoPurchaseFailed=true&error=${encodeURIComponent(result.error || "ไม่สามารถซื้อตอนได้")}`);
+        }
       }
     }
 

@@ -1,6 +1,6 @@
 import { CartoonDetailPage } from "@/app/(frontend)/(cartoon)/components/CartoonDetailPage";
 import { generateMetadata as genMeta } from "@/lib/utils/metadata";
-import { getCartoonByUuid } from "@/lib/api/cartoon";
+import { getCartoonByUuid } from "@/lib/api/frontend.cartoon";
 
 export async function generateMetadata({
   params,

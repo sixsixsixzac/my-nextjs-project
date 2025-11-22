@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         where: {
           cartoon: {
             uuid: cartoonUuid,
-            type: "manga",
+            type: "novel",
             status: "active",
           },
           epNo: typeof episode === "string" ? parseInt(episode) : episode,

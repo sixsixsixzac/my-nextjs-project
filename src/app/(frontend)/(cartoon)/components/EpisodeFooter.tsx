@@ -12,7 +12,11 @@ import {
   Play,
   Pause,
   Home,
-  RotateCcw
+  RotateCcw,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -47,8 +51,12 @@ export function EpisodeFooter({
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [clientShareUrl, setClientShareUrl] = useState<string | undefined>(undefined);
+  const [textAlign, setTextAlign] = useState<"left" | "center" | "right" | "justify" | null>(null);
   const autoScrollIntervalRef = useRef<number | null>(null);
   const isProgrammaticScrollRef = useRef(false);
+  
+  // Detect if this is a novel (no totalPages prop)
+  const isNovel = totalPages === undefined;
 
   // Handle client-side mounting to avoid hydration mismatch
   useEffect(() => {
@@ -97,6 +105,20 @@ export function EpisodeFooter({
       (img as HTMLElement).style.filter = `brightness(${brightness}%)`;
     });
   }, [brightness]);
+
+  // Apply text alignment for novels
+  useEffect(() => {
+    if (isNovel) {
+      const novelContent = document.querySelector(".novel-content");
+      if (novelContent) {
+        if (textAlign) {
+          (novelContent as HTMLElement).style.textAlign = textAlign;
+        } else {
+          (novelContent as HTMLElement).style.textAlign = "";
+        }
+      }
+    }
+  }, [textAlign, isNovel]);
 
   // Auto scroll functionality
   useEffect(() => {
@@ -176,7 +198,10 @@ export function EpisodeFooter({
   const handleReset = useCallback(() => {
     setBrightness(100);
     setScrollSpeed(50);
-  }, []);
+    if (isNovel) {
+      setTextAlign(null);
+    }
+  }, [isNovel]);
 
   // Use client-side URL or fallback to prop
   const effectiveShareUrl = isMounted ? clientShareUrl : (shareUrl || undefined);
@@ -310,6 +335,54 @@ export function EpisodeFooter({
                     step={5}
                   />
                 </div>
+
+                {/* Text alignment (Novel only) */}
+                {isNovel && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">จัดตำแหน่งข้อความ</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant={textAlign === "left" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setTextAlign("left")}
+                          className="w-full"
+                        >
+                          <AlignLeft className="w-4 h-4 mr-2" />
+                          ซ้าย
+                        </Button>
+                        <Button
+                          variant={textAlign === "center" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setTextAlign("center")}
+                          className="w-full"
+                        >
+                          <AlignCenter className="w-4 h-4 mr-2" />
+                          กลาง
+                        </Button>
+                        <Button
+                          variant={textAlign === "right" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setTextAlign("right")}
+                          className="w-full"
+                        >
+                          <AlignRight className="w-4 h-4 mr-2" />
+                          ขวา
+                        </Button>
+                        <Button
+                          variant={textAlign === "justify" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setTextAlign("justify")}
+                          className="w-full"
+                        >
+                          <AlignJustify className="w-4 h-4 mr-2" />
+                          เต็มบรรทัด
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <Separator />
 

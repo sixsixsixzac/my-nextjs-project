@@ -7,9 +7,9 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { ImageIcon } from "lucide-react";
-import { EpisodeUnlock } from "./EpisodeUnlock";
-import { EpisodeHeader } from "./EpisodeHeader";
-import { EpisodeFooter } from "./EpisodeFooter";
+import { EpisodeUnlock } from "../../../components/EpisodeUnlock";
+import { EpisodeHeader } from "../../../components/EpisodeHeader";
+import { EpisodeFooter } from "../../../components/EpisodeFooter";
 import { toast } from "sonner";
 import {
   Breadcrumb,
@@ -19,7 +19,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import type { MangaReadProps } from "./types";
+import type { MangaReadProps } from "../../../components/types";
 
 // Memoized image component for better performance with error handling
 const MangaImage = memo(({ 

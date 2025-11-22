@@ -10,6 +10,7 @@ import {
 import type { SearchParams, SearchResponse } from "@/lib/types/search";
 import type { CartoonCardProps } from "@/components/common/CartoonCard";
 import { Prisma } from "@prisma/client";
+import { constructImageUrl, constructAuthorAvatarUrl } from "@/lib/utils/image-url";
 
 // Type for cartoon query result
 type CartoonQueryResult = {
@@ -225,30 +226,6 @@ function getOrderConfig(orderBy: string): {
         needsGroupBy: false,
       };
   }
-}
-
-/**
- * Constructs image URL from path
- */
-function constructImageUrl(path: string | null, defaultPath: string): string {
-  if (!path) return defaultPath;
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
-  }
-  return defaultPath.includes("post_img") 
-    ? `/images/post_img/${path}`
-    : `/images/${path}`;
-}
-
-/**
- * Constructs author avatar URL
- */
-function constructAuthorAvatarUrl(userImg: string | null): string | undefined {
-  if (!userImg || userImg === "none.png") return undefined;
-  if (userImg.startsWith("http://") || userImg.startsWith("https://")) {
-    return userImg;
-  }
-  return `/images/${userImg}`;
 }
 
 /**

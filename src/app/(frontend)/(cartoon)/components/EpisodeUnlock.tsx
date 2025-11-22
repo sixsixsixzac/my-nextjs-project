@@ -11,18 +11,21 @@ import { faCoins } from "@fortawesome/free-solid-svg-icons";
 import { EpisodeHeader } from "./EpisodeHeader";
 import type { EpisodeUnlockProps } from "./types";
 
-export function EpisodeUnlock({ cartoonUuid, episode, episodeInfo, navigation, userPoints: initialUserPoints }: EpisodeUnlockProps) {
+export function EpisodeUnlock({ cartoonUuid, episode, episodeInfo, navigation, userPoints: initialUserPoints, cartoonType = "manga" }: EpisodeUnlockProps) {
   const router = useRouter();
   const [userPoints, setUserPoints] = useState<number | null>(initialUserPoints ?? null);
   const [loading, setLoading] = useState(initialUserPoints === undefined);
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const basePath = cartoonType === "novel" ? "/novel" : "/manga";
+  const purchaseApiPath = cartoonType === "novel" ? "/api/novel/episode/purchase" : "/api/manga/episode/purchase";
+
   const handleNavigation = useCallback((epNo: number | null) => {
     if (epNo !== null) {
-      router.push(`/manga/${cartoonUuid}/${epNo}`);
+      router.push(`${basePath}/${cartoonUuid}/${epNo}`);
     }
-  }, [router, cartoonUuid]);
+  }, [router, cartoonUuid, basePath]);
 
   useEffect(() => {
     // Only fetch if not provided as prop
@@ -62,7 +65,7 @@ export function EpisodeUnlock({ cartoonUuid, episode, episodeInfo, navigation, u
     setError(null);
 
     try {
-      const response = await fetch("/api/manga/episode/purchase", {
+      const response = await fetch(purchaseApiPath, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,11 +88,11 @@ export function EpisodeUnlock({ cartoonUuid, episode, episodeInfo, navigation, u
       setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการซื้อ");
       setPurchasing(false);
     }
-  }, [hasEnoughPoints, cartoonUuid, episodeInfo]);
+  }, [hasEnoughPoints, cartoonUuid, episodeInfo, purchaseApiPath]);
 
   const handleBack = useCallback(() => {
-    router.push(`/manga/${cartoonUuid}`);
-  }, [router, cartoonUuid]);
+    router.push(`${basePath}/${cartoonUuid}`);
+  }, [router, cartoonUuid, basePath]);
 
   return (
     <div className="space-y-4">
