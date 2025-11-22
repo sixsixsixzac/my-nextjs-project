@@ -11,8 +11,6 @@ import { ChangePasswordSection } from "./components/ChangePasswordSection"
 
 export default function SettingsPage() {
   const { data: session } = useSession()
-  const [buyImmediately, setBuyImmediately] = useState(false)
-  const [loadFullImages, setLoadFullImages] = useState(false)
   const [isGoogleConnected, setIsGoogleConnected] = useState(false)
   
   // Social media links state - initialize from session
@@ -93,12 +91,7 @@ export default function SettingsPage() {
         />
 
         {/* General Settings Section */}
-        <GeneralSettingsSection
-          buyImmediately={buyImmediately}
-          loadFullImages={loadFullImages}
-          onBuyImmediatelyChange={setBuyImmediately}
-          onLoadFullImagesChange={setLoadFullImages}
-        />
+        <GeneralSettingsSection />
 
         {/* Google Account Connection */}
         <GoogleAccountSection

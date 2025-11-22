@@ -526,10 +526,25 @@ model UserProfile {
   topupTransactions    TopupTransaction[]
   bans                 UserBan[]
   detail               UserDetail?
+  settings             UserSettings[]
 
   @@index([uuid(length: 255)])
   @@fulltext([uName])
   @@map("user_profile")
+}
+
+model UserSettings {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  userId      Int       @map("user_id") @db.Int
+  settingKey  String    @map("setting_key") @db.VarChar(255)
+  settingValue Json     @map("setting_value") @db.Json
+  updatedAt   DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.Timestamp
+
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, settingKey])
+  @@map("user_settings")
 }
 
 model WebContact {

@@ -59,6 +59,19 @@ export interface CartoonDetailData {
 }
 
 /**
+ * Get cartoon type from URL path
+ */
+export async function getCartoonTypeFromUrl(pathname: string): Promise<"manga" | "novel" | null> {
+  if (pathname.startsWith("/manga/")) {
+    return "manga";
+  }
+  if (pathname.startsWith("/novel/")) {
+    return "novel";
+  }
+  return null;
+}
+
+/**
  * Fetch cartoon detail by UUID and type
  */
 export async function getCartoonByUuid(
@@ -177,7 +190,17 @@ export async function getCartoonByUuid(
         // Episode is owned if:
         // 1. lockAfterDatetime is null (permanent ownership), OR
         // 2. lockAfterDatetime is in the future (temporary ownership still valid)
-        const isTemporarilyOwned = purchase.lockAfterDatetime === null || purchase.lockAfterDatetime > now;
+        let isTemporarilyOwned = false;
+        if (purchase.lockAfterDatetime === null) {
+          isTemporarilyOwned = true; // Permanent ownership
+        } else {
+          // Ensure lockAfterDatetime is a Date object and compare
+          const lockDate = purchase.lockAfterDatetime instanceof Date 
+            ? purchase.lockAfterDatetime 
+            : new Date(purchase.lockAfterDatetime);
+          isTemporarilyOwned = lockDate > now;
+        }
+        
         if (isTemporarilyOwned) {
           ownedEpisodeIds.add(purchase.epId);
           episodeLockAfterMap.set(purchase.epId, purchase.lockAfterDatetime);
@@ -216,4 +239,242 @@ export async function getCartoonByUuid(
     ageRate: cartoon.ageRate && cartoon.ageRate !== "all" ? cartoon.ageRate : undefined,
   };
 }
+
+/**
+ * Get manga episode info (pId, epNo) from UUID and episode number
+ */
+export async function getMangaEpisodeInfo(
+  cartoonUuid: string,
+  episodeNumber: string
+): Promise<{ pId: number; epNo: number; epName: string; epPrice: number; epId: number; totalImage: number } | null> {
+  const episodeNo = parseInt(episodeNumber);
+  if (isNaN(episodeNo)) {
+    return null;
+  }
+
+  const episode = await prisma.mangaEp.findFirst({
+    where: {
+      cartoon: {
+        uuid: cartoonUuid,
+        type: "manga",
+        status: "active",
+      },
+      epNo: episodeNo,
+      status: "active",
+    },
+    select: {
+      epId: true,
+      pId: true,
+      epNo: true,
+      epName: true,
+      epPrice: true,
+      totalImage: true,
+    },
+  });
+
+  return episode;
+}
+
+/**
+ * Check if user owns a manga episode
+ */
+export async function checkMangaEpisodeOwnership(
+  epId: number,
+  epPrice: number,
+  userId?: number
+): Promise<boolean> {
+  // Free episodes are always accessible
+  if (epPrice === 0) {
+    return true;
+  }
+
+  // If no user, can't own paid episode
+  if (!userId) {
+    return false;
+  }
+
+  // Check ownership in SQL:
+  // Episode is owned if purchase exists AND:
+  // 1. lockAfterDatetime is null (permanent ownership), OR
+  // 2. lockAfterDatetime > NOW() (temporary ownership still valid)
+  const result = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(*) as count
+    FROM ep_shop
+    WHERE user_id = ${userId}
+      AND ep_id = ${epId}
+      AND (lock_after_datetime IS NULL OR lock_after_datetime > NOW())
+  `;
+
+  const count = result[0]?.count ?? BigInt(0);
+  return Number(count) > 0;
+}
+
+/**
+ * Get manga episode images with pagination
+ */
+export async function getMangaEpisodeImages(
+  pId: number,
+  epNo: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<{ images: string[]; hasMore: boolean; total: number }> {
+  const skip = (page - 1) * limit;
+
+  const images = await prisma.mangaEpImage.findMany({
+    where: {
+      pId,
+      epNo,
+    },
+    select: {
+      epiImageName: true,
+    },
+    orderBy: {
+      epiId: "asc",
+    },
+    skip,
+    take: limit + 1, // Fetch one extra to check if there's more
+  });
+
+  const hasMore = images.length > limit;
+  const imageList = hasMore ? images.slice(0, limit) : images;
+
+  // Construct image URLs
+  // Based on the folder structure: /images/manga_episode_images/{pId}/{epNo}/{imageName}
+  const imageUrls = imageList.map((img) => 
+    `/images/manga_episode_images/${pId}/${epNo}/${img.epiImageName}`
+  );
+
+  // Get total count
+  const total = await prisma.mangaEpImage.count({
+    where: {
+      pId,
+      epNo,
+    },
+  });
+
+  return {
+    images: imageUrls,
+    hasMore,
+    total,
+  };
+}
+
+/**
+ * Get previous and next episode numbers for navigation
+ */
+export async function getMangaEpisodeNavigation(
+  cartoonUuid: string,
+  currentEpNo: number
+): Promise<{ prevEpNo: number | null; nextEpNo: number | null }> {
+  // Get the cartoon's pId first
+  const cartoon = await prisma.cartoon.findFirst({
+    where: {
+      uuid: cartoonUuid,
+      type: "manga",
+      status: "active",
+    },
+    select: {
+      pId: true,
+    },
+  });
+
+  if (!cartoon) {
+    return { prevEpNo: null, nextEpNo: null };
+  }
+
+  // Get all episode numbers for this cartoon, ordered by epNo
+  const episodes = await prisma.mangaEp.findMany({
+    where: {
+      pId: cartoon.pId,
+      status: "active",
+    },
+    select: {
+      epNo: true,
+    },
+    orderBy: {
+      epNo: "asc",
+    },
+  });
+
+  const episodeNumbers = episodes.map((ep) => ep.epNo);
+  const currentIndex = episodeNumbers.indexOf(currentEpNo);
+
+  const prevEpNo = currentIndex > 0 ? episodeNumbers[currentIndex - 1] : null;
+  const nextEpNo = currentIndex < episodeNumbers.length - 1 ? episodeNumbers[currentIndex + 1] : null;
+
+  return { prevEpNo, nextEpNo };
+}
+
+/**
+ * Purchase a manga episode
+ */
+export async function purchaseMangaEpisode(
+  userId: number,
+  episodeInfo: { epId: number; pId: number; epNo: number; epPrice: number },
+  userPoints: number
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    // Check if episode is free
+    if (episodeInfo.epPrice === 0) {
+      return { success: false, error: "This episode is free" };
+    }
+
+    // Check if user has enough points
+    if (userPoints < episodeInfo.epPrice) {
+      return { success: false, error: "Insufficient points" };
+    }
+
+    // Get episode lockDurationDays if it exists
+    const fullEpisode = await prisma.mangaEp.findUnique({
+      where: { epId: episodeInfo.epId },
+      select: { lockDurationDays: true },
+    });
+
+    // Start transaction to purchase episode
+    await prisma.$transaction(async (tx) => {
+      // Deduct points from user
+      await tx.userProfile.update({
+        where: { id: userId },
+        data: {
+          point: {
+            decrement: episodeInfo.epPrice,
+          },
+        },
+      });
+
+      // Create purchase record with SQL-calculated lockAfterDatetime
+      if (fullEpisode?.lockDurationDays) {
+        // Use SQL to calculate lockAfterDatetime: DATE_ADD(NOW(), INTERVAL lockDurationDays DAY)
+        await tx.$executeRaw`
+          INSERT INTO ep_shop (
+            user_id, p_id, ep_id, ep_no, point, remain_point, lock_after_datetime
+          ) VALUES (
+            ${userId}, ${episodeInfo.pId}, ${episodeInfo.epId}, ${episodeInfo.epNo}, 
+            ${episodeInfo.epPrice}, ${userPoints - episodeInfo.epPrice}, 
+            DATE_ADD(NOW(), INTERVAL ${fullEpisode.lockDurationDays} DAY)
+          )
+        `;
+      } else {
+        // Create purchase record without lockAfterDatetime
+        await tx.epShop.create({
+          data: {
+            userId: userId,
+            pId: episodeInfo.pId,
+            epId: episodeInfo.epId,
+            epNo: episodeInfo.epNo,
+            point: episodeInfo.epPrice,
+            remainPoint: userPoints - episodeInfo.epPrice,
+            lockAfterDatetime: null,
+          },
+        });
+      }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error purchasing episode:", error);
+    return { success: false, error: "Internal server error" };
+  }
+}
+
 

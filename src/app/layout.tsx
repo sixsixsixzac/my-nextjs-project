@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/providers/ThemeProvider";
 import { SessionProvider } from "@/lib/providers/SessionProvider";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default function RootLayout({
         >
           <SessionProvider>
             <AppLayout>{children}</AppLayout>
+            <Toaster />
           </SessionProvider>
         </ThemeProvider>
       </body>

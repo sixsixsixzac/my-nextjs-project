@@ -10,6 +10,7 @@
  */
 import { PrismaClient } from '@prisma/client'
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
+import '@/lib/config/timezone' // Initialize timezone early
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -17,6 +18,7 @@ const globalForPrisma = globalThis as unknown as {
 
 // Create adapter using DATABASE_URL connection string
 // PrismaMariaDb works with both MariaDB and MySQL databases
+// Note: MySQL/MariaDB timezone is set via --default-time-zone='+07:00' in docker-compose
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL!)
 
 export const prisma =
