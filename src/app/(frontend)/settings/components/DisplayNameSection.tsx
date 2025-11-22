@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User } from "lucide-react"
+import { User, Loader2 } from "lucide-react"
 import { validateDisplayName } from "@/lib/utils/text-validation"
+import { toast } from "sonner"
 
 interface DisplayNameSectionProps {
   initialDisplayName?: string
@@ -17,8 +19,18 @@ export function DisplayNameSection({
   initialDisplayName = "",
   onSave,
 }: DisplayNameSectionProps) {
+  const { data: session, update: updateSession } = useSession()
   const [displayName, setDisplayName] = useState("")
+  const [currentDisplayName, setCurrentDisplayName] = useState(initialDisplayName || "")
   const [error, setError] = useState<string | undefined>(undefined)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Update current display name when initialDisplayName prop changes
+  useEffect(() => {
+    if (initialDisplayName) {
+      setCurrentDisplayName(initialDisplayName)
+    }
+  }, [initialDisplayName])
 
   const handleChange = (value: string) => {
     setDisplayName(value)
@@ -37,16 +49,78 @@ export function DisplayNameSection({
     }
   }
 
-  const handleSave = () => {
-    const validation = validateDisplayName(displayName)
+  const handleSave = async () => {
+    const trimmedName = displayName.trim()
+    
+    // Don't save if it's the same as the current name
+    if (trimmedName === currentDisplayName) {
+      setError(undefined)
+      return
+    }
+
+    const validation = validateDisplayName(trimmedName)
     if (!validation.isValid) {
       setError(validation.error)
       return
     }
 
+    setIsSaving(true)
     setError(undefined)
-    if (onSave) {
-      onSave(displayName.trim())
+
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          displayName: trimmedName,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        console.error("Failed to save display name:", errorMessage, response.status)
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      const savedDisplayName = data.displayName
+      
+      // Update current display name to reflect the saved value
+      setCurrentDisplayName(savedDisplayName)
+      
+      // Clear the input after successful save
+      setDisplayName("")
+      
+      // Update session to reflect the new display name
+      await updateSession({
+        ...session,
+        user: {
+          ...session?.user,
+          name: savedDisplayName,
+        },
+      })
+
+      toast.success("บันทึกชื่อแสดงผลสำเร็จ")
+      
+      // Call onSave callback if provided
+      if (onSave) {
+        onSave(savedDisplayName)
+      }
+    } catch (error) {
+      console.error("Error saving display name:", error)
+      if (error instanceof Error && error.message.includes("Unauthorized")) {
+        toast.error("กรุณาเข้าสู่ระบบเพื่อบันทึกชื่อแสดงผล")
+      } else if (error instanceof Error && error.message) {
+        setError(error.message)
+        toast.error(error.message)
+      } else {
+        toast.error("ไม่สามารถบันทึกชื่อแสดงผลได้")
+      }
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -59,11 +133,6 @@ export function DisplayNameSection({
         </CardTitle>
         <CardDescription>
           ชื่อที่ใช้แสดงบนเว็บไซต์
-          {initialDisplayName && (
-            <span className="block mt-1 text-xs text-muted-foreground">
-              ชื่อปัจจุบัน: <span className="font-medium">{initialDisplayName}</span>
-            </span>
-          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -79,6 +148,7 @@ export function DisplayNameSection({
             className={`max-w-md ${error ? "border-destructive" : ""}`}
             aria-invalid={!!error}
             aria-describedby={error ? "display-name-error" : undefined}
+            disabled={isSaving}
           />
           {error && (
             <p
@@ -92,9 +162,16 @@ export function DisplayNameSection({
         </div>
         <Button 
           onClick={handleSave}
-          disabled={!!error || !displayName.trim()}
+          disabled={!!error || !displayName.trim() || isSaving || displayName.trim() === currentDisplayName}
         >
-          บันทึกการเปลี่ยนแปลง
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              กำลังบันทึก...
+            </>
+          ) : (
+            "บันทึกการเปลี่ยนแปลง"
+          )}
         </Button>
       </CardContent>
     </Card>
