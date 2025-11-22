@@ -105,7 +105,7 @@ export async function UserLayout({ children }: UserLayoutProps) {
                 alt="Logo"
                 width={570}
                 height={103}
-                className="h-auto w-32 sm:w-40 md:w-48 lg:w-56"
+                className="h-auto w-56 sm:w-40 md:w-48 lg:w-56"
                 priority
               />
             </Link>

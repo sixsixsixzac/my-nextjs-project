@@ -257,7 +257,10 @@ export function CartoonScroller({
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 rounded-full bg-background/90 shadow-lg hover:bg-background lg:h-12 lg:w-12"
+          className={cn(
+            "h-10 w-10 rounded-full bg-background/90 shadow-lg hover:bg-background lg:h-12 lg:w-12",
+            canScrollLeft && "cursor-pointer"
+          )}
           onClick={scrollLeft}
           disabled={!canScrollLeft}
           aria-label="Scroll left"
@@ -270,7 +273,10 @@ export function CartoonScroller({
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 rounded-full bg-background/90 shadow-lg hover:bg-background lg:h-12 lg:w-12"
+          className={cn(
+            "h-10 w-10 rounded-full bg-background/90 shadow-lg hover:bg-background lg:h-12 lg:w-12",
+            canScrollRight && "cursor-pointer"
+          )}
           onClick={scrollRight}
           disabled={!canScrollRight}
           aria-label="Scroll right"
