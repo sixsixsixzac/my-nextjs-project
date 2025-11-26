@@ -39,6 +39,7 @@ export function OptimizedImage({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const isDicebearImage = src?.includes("api.dicebear.com");
+  const isPriority = Boolean(priority);
 
   const handleLoad = () => {
     setImageLoaded(true);
@@ -51,19 +52,25 @@ export function OptimizedImage({
     onError?.();
   };
 
+  const placeholder: "empty" | "blur" = isPriority ? "empty" : "blur";
+
   const imageProps = {
     src,
     alt,
     className: cn(
-      "object-cover transition-opacity duration-500",
-      imageLoaded ? "opacity-100" : "opacity-0",
+      "object-cover",
+      // Avoid expensive opacity transitions for LCP/priority images
+      isPriority
+        ? ""
+        : "transition-opacity duration-500 " + (imageLoaded ? "opacity-100" : "opacity-0"),
       className
     ),
-    loading: priority ? ("eager" as const) : ("lazy" as const),
-    priority,
+    loading: isPriority ? ("eager" as const) : ("lazy" as const),
+    priority: isPriority,
     quality,
-    placeholder: "blur" as const,
-    blurDataURL: getBlurDataURL(),
+    // For LCP images, skip blurred placeholder to reduce paint & decoding work
+    placeholder,
+    ...(placeholder === "blur" ? { blurDataURL: getBlurDataURL() } : {}),
     unoptimized: isDicebearImage,
     onLoad: handleLoad,
     onError: handleError,
@@ -92,8 +99,8 @@ export function OptimizedImage({
       ) : (
         <Image width={width} height={height} {...imageProps} />
       )}
-      {/* Blurred overlay that fades out when image loads */}
-      {!imageError && (
+      {/* Blurred overlay that fades out when image loads (disabled for priority/LCP images) */}
+      {!imageError && !isPriority && (
         <div
           className={cn(
             "absolute inset-0 bg-cover bg-center transition-opacity duration-500 pointer-events-none",

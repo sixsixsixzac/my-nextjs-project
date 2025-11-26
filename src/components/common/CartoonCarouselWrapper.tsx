@@ -22,8 +22,8 @@ interface CartoonCarouselWrapperProps {
 export async function CartoonCarouselWrapper({
     title,
     filters,
-    // Fetch enough items so desktop/tablet always has scrollable overflow
-    limit = 12,
+    // Fetch a moderate number of items to balance UX and performance
+    limit = 8,
     className,
     priorityFirst = false,
 }: CartoonCarouselWrapperProps) {

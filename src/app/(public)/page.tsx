@@ -1,6 +1,7 @@
 import { generateMetadata } from "@/lib/utils/metadata";
 import type { Metadata } from "next";
 import { CartoonCarouselWrapper } from "@/components/common/CartoonCarouselWrapper";
+import { LazyCartoonCarousel } from "@/components/common/LazyCartoonCarousel";
 
 export const metadata: Metadata = generateMetadata({
   title: "หน้าหลัก",
@@ -29,7 +30,7 @@ export default function RootPage() {
             cartoonType: "manga",
           }}
         />
-        <CartoonCarouselWrapper
+        <LazyCartoonCarousel
           title="มังงะใหม่"
           className="mt-2"
           filters={{
@@ -38,7 +39,7 @@ export default function RootPage() {
           }}
         />
 
-        <CartoonCarouselWrapper
+        <LazyCartoonCarousel
           title="นิยายยอดนิยม"
           className="mt-8"
           filters={{
@@ -46,7 +47,7 @@ export default function RootPage() {
             cartoonType: "novel",
           }}
         />
-        <CartoonCarouselWrapper
+        <LazyCartoonCarousel
           title="นิยายอัปเดตล่าสุด"
           className="mt-2"
           filters={{
@@ -54,7 +55,7 @@ export default function RootPage() {
             cartoonType: "novel",
           }}
         />
-        <CartoonCarouselWrapper
+        <LazyCartoonCarousel
           title="นิยายใหม่"
           className="mt-2"
           filters={{

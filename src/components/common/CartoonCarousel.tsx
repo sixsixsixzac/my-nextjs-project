@@ -173,12 +173,12 @@ export function CartoonCarousel({
             dragFree: true,
             skipSnaps: true,
             slidesToScroll: 1,
-            // Desktop / tablet: buttons still jump exactly 6 items
+            // Desktop / tablet: buttons jump a smaller number of items to reduce per-scroll work
             breakpoints: {
               "(min-width: 768px)": {
                 dragFree: false,
                 skipSnaps: false,
-                slidesToScroll: 6,
+                slidesToScroll: 3,
               },
             },
             containScroll: "trimSnaps",
