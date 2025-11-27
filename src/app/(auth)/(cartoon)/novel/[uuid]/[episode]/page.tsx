@@ -1,7 +1,7 @@
 import { getEpisodeInfo, checkEpisodeOwnership, getEpisodeNavigation, purchaseEpisode } from "@/lib/api/cartoon";
 import { getUserData } from "@/lib/api/user";
-import { NovelRead } from "@/app/(frontend)/(cartoon)/novel/[uuid]/[episode]/NovelRead";
-import { EpisodeUnlock } from "@/app/(frontend)/(cartoon)/components/EpisodeUnlock";
+import { NovelRead } from "@/app/(auth)/(cartoon)/novel/[uuid]/[episode]/NovelRead";
+import { EpisodeUnlock } from "@/app/(auth)/(cartoon)/components/EpisodeUnlock";
 import { notFound, redirect } from "next/navigation";
 
 export default async function NovelReadingPage({

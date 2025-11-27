@@ -1,4 +1,4 @@
-import { createCartoonDetailRouteHandlers } from "@/app/(public)/(cartoon)/components/createCartoonDetailRoute";
+import { createCartoonDetailRouteHandlers } from "@/app/(auth)/(cartoon)/components/createCartoonDetailRoute";
 
 const { generateMetadata, Page } = createCartoonDetailRouteHandlers({
   type: "novel",

@@ -1,4 +1,4 @@
-import { CartoonDetailPage } from "@/app/(public)/(cartoon)/components/CartoonDetailPage";
+import { CartoonDetailPage } from "@/app/(auth)/(cartoon)/components/CartoonDetailPage";
 import { generateMetadata as genMeta } from "@/lib/utils/metadata";
 import { getCartoonByUuid } from "@/lib/api/frontend.cartoon";
 
