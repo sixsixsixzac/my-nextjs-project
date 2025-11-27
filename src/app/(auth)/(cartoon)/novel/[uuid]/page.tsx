@@ -1,11 +1,48 @@
-import { createCartoonDetailRouteHandlers } from "@/app/(auth)/(cartoon)/components/createCartoonDetailRoute";
+import { CartoonDetailPage } from "@/app/(auth)/(cartoon)/components/CartoonDetailPage";
+import { generateMetadata as genMeta } from "@/lib/utils/metadata";
+import { getCartoonByUuid } from "@/lib/api/frontend.cartoon";
 
-const { generateMetadata, Page } = createCartoonDetailRouteHandlers({
-  type: "novel",
-  defaultTitle: "นิยาย",
-  defaultDescription: "รายละเอียดนิยาย",
-  baseKeywords: ["นิยาย", "novel"],
-});
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ uuid: string }>;
+}) {
+  const { uuid } = await params;
 
-export { generateMetadata };
-export default Page;
+  try {
+    const cartoon = await getCartoonByUuid(uuid, "novel");
+    return genMeta({
+      title: cartoon.title,
+      description: cartoon.description,
+      keywords: ["นิยาย", "novel", cartoon.title, ...cartoon.genres],
+    });
+  } catch {
+    return genMeta({
+      title: "นิยาย",
+      description: "รายละเอียดนิยาย",
+      keywords: ["นิยาย", "novel"],
+    });
+  }
+}
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ uuid: string }>;
+}) {
+  const { uuid } = await params;
+  const cartoon = await getCartoonByUuid(uuid, "novel");
+
+  return (
+    <CartoonDetailPage
+      type="novel"
+      title={cartoon.title}
+      coverImage={cartoon.coverImage}
+      author={cartoon.author}
+      stats={cartoon.stats}
+      description={cartoon.description}
+      episodes={cartoon.episodes}
+      uuid={cartoon.uuid}
+    />
+  );
+}
