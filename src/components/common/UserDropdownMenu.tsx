@@ -57,7 +57,7 @@ export function UserDropdownMenu({
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 gap-2 px-2 cursor-pointer">
           <Avatar className="h-8 w-8">

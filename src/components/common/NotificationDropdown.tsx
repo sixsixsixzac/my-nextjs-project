@@ -72,7 +72,7 @@ export function NotificationDropdown({
   const hasUnread = displayUnreadCount > 0
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="hidden md:flex relative cursor-pointer">
           <Bell className="h-5 w-5" />
@@ -81,14 +81,14 @@ export function NotificationDropdown({
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel className="flex items-center justify-between">
-          <span>การแจ้งเตือน</span>
+      <DropdownMenuContent align="end" className="w-80 overflow-x-hidden">
+        <DropdownMenuLabel className="flex items-center justify-between gap-2 min-w-0">
+          <span className="truncate">การแจ้งเตือน</span>
           {hasUnread && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 text-xs"
+              className="h-6 text-xs flex-shrink-0"
               onClick={onMarkAllAsRead}
             >
               อ่านทั้งหมด
@@ -96,7 +96,7 @@ export function NotificationDropdown({
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto overflow-x-hidden">
           {notifications.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               ไม่มีการแจ้งเตือน
@@ -105,20 +105,20 @@ export function NotificationDropdown({
             notifications.map((notification, index) => (
               <div key={notification.id}>
                 <DropdownMenuItem
-                  className={`flex flex-col items-start p-3 cursor-pointer hover:bg-accent ${
+                  className={`flex flex-col items-start p-3 cursor-pointer hover:bg-accent min-w-0 ${
                     !notification.read ? "bg-accent/50" : ""
                   }`}
                 >
-                  <div className="flex items-start gap-2 w-full">
+                  <div className="flex items-start gap-2 w-full min-w-0">
                     <div
                       className={`h-2 w-2 ${typeColors[notification.type]} rounded-full mt-1.5 flex-shrink-0`}
                     ></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <p className="text-sm font-medium truncate w-full">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2 break-words">
                         {notification.description}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">{notification.time}</p>
                     </div>
                   </div>
                 </DropdownMenuItem>
@@ -128,8 +128,8 @@ export function NotificationDropdown({
           )}
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="justify-center cursor-pointer">
-          <Link href={viewAllUrl} className="w-full text-center text-sm">
+        <DropdownMenuItem className="justify-center cursor-pointer min-w-0">
+          <Link href={viewAllUrl} className="w-full text-center text-sm truncate">
             ดูการแจ้งเตือนทั้งหมด
           </Link>
         </DropdownMenuItem>
