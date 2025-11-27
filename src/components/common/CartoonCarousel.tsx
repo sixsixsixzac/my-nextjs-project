@@ -184,7 +184,7 @@ export function CartoonCarousel({
             containScroll: "trimSnaps",
           }}
         >
-          <CarouselContent className="md:-ml-3 lg:-ml-4">
+          <CarouselContent className="md:-ml-3 lg:-ml-4 py-1 px-2">
             {slides.map((item) => (
               <CarouselItem
                 key={item.uuid}

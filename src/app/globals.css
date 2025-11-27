@@ -44,38 +44,39 @@
 }
 
 :root {
+  /* Discord-inspired light theme */
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.73 0.13 195);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(0.98 0.002 240); /* #F2F3F5 - Discord light background */
+  --foreground: oklch(0.20 0.01 240); /* #23272A - Discord dark text */
+  --card: oklch(1 0 0); /* #FFFFFF - Pure white for cards */
+  --card-foreground: oklch(0.20 0.01 240);
+  --popover: oklch(1 0 0); /* #FFFFFF - White popovers */
+  --popover-foreground: oklch(0.20 0.01 240);
+  --primary: oklch(0.55 0.15 270); /* #5865F2 - Discord blurple */
+  --primary-foreground: oklch(0.98 0 0); /* White text on blurple */
+  --secondary: oklch(0.95 0.002 240); /* #E3E5E8 - Discord light gray */
+  --secondary-foreground: oklch(0.20 0.01 240);
+  --muted: oklch(0.95 0.002 240); /* #E3E5E8 - Light gray for muted areas */
+  --muted-foreground: oklch(0.45 0.01 240); /* #747F8D - Discord muted text */
+  --accent: oklch(0.92 0.002 240); /* Slightly darker for hover states */
+  --accent-foreground: oklch(0.20 0.01 240);
+  --destructive: oklch(0.60 0.20 25); /* Red for destructive actions */
+  --border: oklch(0.90 0.002 240); /* #E3E5E8 - Discord light borders */
+  --input: oklch(1 0 0); /* #FFFFFF - White input backgrounds */
+  --ring: oklch(0.55 0.15 270); /* Discord blurple for focus rings */
+  --chart-1: oklch(0.55 0.15 270); /* Discord blurple */
+  --chart-2: oklch(0.60 0.15 180); /* Green accent */
+  --chart-3: oklch(0.70 0.15 70); /* Yellow accent */
+  --chart-4: oklch(0.60 0.20 25); /* Red accent */
+  --chart-5: oklch(0.65 0.15 300); /* Purple accent */
+  --sidebar: oklch(0.98 0.002 240); /* #F2F3F5 - Discord light sidebar */
+  --sidebar-foreground: oklch(0.20 0.01 240);
+  --sidebar-primary: oklch(0.55 0.15 270); /* Discord blurple */
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.95 0.002 240); /* Hover state */
+  --sidebar-accent-foreground: oklch(0.20 0.01 240);
+  --sidebar-border: oklch(0.90 0.002 240); /* Light border */
+  --sidebar-ring: oklch(0.55 0.15 270);
 }
 
 .dark {

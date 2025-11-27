@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { generateMetadata as generatePageMetadata } from "@/lib/utils/metadata";
 import type { Metadata } from "next";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, BookOpen, Eye, Heart } from "lucide-react";
+import { BookOpen, Eye, Heart } from "lucide-react";
 import { constructAuthorAvatarUrl, constructImageUrl } from "@/lib/utils/image-url";
 import { CartoonCard, type CartoonCardProps } from "@/components/common/CartoonCard";
 import { cn } from "@/lib/utils";
@@ -27,7 +26,6 @@ async function getUserProfile(username: string) {
       id: true,
       displayName: true,
       userImg: true,
-      level: true,
       point: true,
       sales: true,
       createdAt: true,
@@ -60,7 +58,6 @@ async function getUserProfile(username: string) {
           displayName: true,
           uName: true,
           userImg: true,
-          level: true,
         },
       },
       _count: {
@@ -119,7 +116,7 @@ async function getUserProfile(username: string) {
         name: cartoon.author.displayName,
         username: cartoon.author.uName || "",
         avatar: constructAuthorAvatarUrl(cartoon.author.userImg),
-        verified: cartoon.author.level >= 2,
+        verified: false,
       },
       genres,
       views: cartoon._count.episodeViews,
@@ -171,7 +168,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   }
 
   const { user, cartoons, stats } = profileData;
-  const isVerified = user.level >= 2;
 
   return (
     <div className="min-h-screen bg-background">
@@ -193,18 +189,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <h1 className="text-2xl font-bold text-card-foreground sm:text-3xl">
                 {user.displayName}
               </h1>
-              {isVerified && (
-                <Badge variant="outline" className="gap-1">
-                  <CheckCircle2 className="size-3.5 text-blue-500" />
-                  <span>ยืนยันตัวตนแล้ว</span>
-                </Badge>
-              )}
-              {user.level >= 6 && (
-                <Badge variant="secondary" className="gap-1">
-                  <BookOpen className="size-3.5" />
-                  <span>ผู้เขียน</span>
-                </Badge>
-              )}
             </div>
 
             {/* Stats */}
