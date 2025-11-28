@@ -1,0 +1,32 @@
+rules:
+  - id: prefer-uuid-frontend
+    pattern: "**/*.{ts,tsx,js,jsx}"
+    message: "Use uuid instead of numeric id in all frontend code."
+    description: "Frontend must never use 'id'. Always use 'uuid' for fetching, mapping, routing, keys, etc."
+    severity: error
+    applies_to: code
+    directives:
+      - find: "id"
+        replace_with: "uuid"
+      - avoid_identifier: "id"
+
+  - id: prefer-existing-types
+    pattern: "**/*.{ts,tsx}"
+    message: "Use existing interfaces/enums if they already exist."
+    description: "Cursor should reuse existing TypeScript interfaces, types, and enums instead of generating new ones."
+    severity: warning
+    applies_to: code
+    directives:
+      - use_existing_types: true
+      - avoid_duplicate_types: true
+
+  - id: prefer-display-name
+    pattern: "**/*.{ts,tsx,js,jsx}"
+    message: "Use display_name instead of u_name when showing user names."
+    description: "Frontend must always display 'display_name'. 'u_name' should only be used for internal identifiers, not UI."
+    severity: error
+    applies_to: code
+    directives:
+      - find: "u_name"
+        replace_with: "display_name"
+      - avoid_identifier: "u_name"

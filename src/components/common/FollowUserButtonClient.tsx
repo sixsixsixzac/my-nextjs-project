@@ -13,7 +13,7 @@ interface FollowUserButtonClientProps {
 
 /**
  * Client-side FollowUserButton component
- * Handles the interactive follow/unfollow functionality
+ * Handles the interactive follow/unfollow functionality using ToggleGroup
  */
 export function FollowUserButtonClient({
   targetUserUuid,
@@ -23,50 +23,35 @@ export function FollowUserButtonClient({
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isPending, startTransition] = useTransition();
 
-  const handleToggle = async (value: string) => {
+  const handleValueChange = async (value: string) => {
+    const willFollow = value === "following";
+    
+    // Optimistically update UI
+    setIsFollowing(willFollow);
+
     startTransition(async () => {
       try {
-        if (value === "following") {
-          // Follow
-          const response = await fetch("/api/user/follow", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ targetUserUuid }),
-          });
+        const response = await fetch("/api/user/follow", {
+          method: willFollow ? "POST" : "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ targetUserUuid }),
+        });
 
-          if (response.ok) {
-            setIsFollowing(true);
-          } else {
-            const data = await response.json();
-            console.error("Error following user:", data.error);
-            // Revert on error
-            setIsFollowing(false);
-          }
-        } else {
-          // Unfollow (when value is empty/deselected)
-          const response = await fetch("/api/user/follow", {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ targetUserUuid }),
-          });
-
-          if (response.ok) {
-            setIsFollowing(false);
-          } else {
-            const data = await response.json();
-            console.error("Error unfollowing user:", data.error);
-            // Revert on error
-            setIsFollowing(true);
-          }
+        if (!response.ok) {
+          const data = await response.json();
+          console.error(
+            `Error ${willFollow ? "following" : "unfollowing"} user:`,
+            data.error
+          );
+          // Revert on error
+          setIsFollowing(!willFollow);
         }
       } catch (error) {
         console.error("Error toggling follow status:", error);
         // Revert on error
-        setIsFollowing(value === "following");
+        setIsFollowing(!willFollow);
       }
     });
   };
@@ -75,7 +60,7 @@ export function FollowUserButtonClient({
     <ToggleGroup
       type="single"
       value={isFollowing ? "following" : ""}
-      onValueChange={handleToggle}
+      onValueChange={handleValueChange}
       disabled={isPending}
       className={cn("shrink-0", className)}
     >
@@ -83,11 +68,13 @@ export function FollowUserButtonClient({
         value="following"
         variant="outline"
         className={cn(
-          "justify-center",
+          "justify-center gap-2",
           "data-[state=on]:bg-green-600 data-[state=on]:text-white data-[state=on]:hover:bg-green-700",
-          "data-[state=off]:bg-blue-600 data-[state=off]:text-white data-[state=off]:hover:bg-blue-700"
+          "data-[state=off]:bg-blue-600 data-[state=off]:text-white data-[state=off]:hover:bg-blue-700",
+          "disabled:opacity-50 disabled:cursor-not-allowed"
         )}
         aria-label={isFollowing ? "Unfollow this user" : "Follow this user"}
+        disabled={isPending}
       >
         {isFollowing ? (
           <>

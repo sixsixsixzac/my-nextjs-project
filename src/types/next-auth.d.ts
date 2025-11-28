@@ -1,5 +1,5 @@
 import 'next-auth'
-import { SocialLinks } from '@/app/(frontend)/settings/components/SocialMediaSection'
+import { SocialLinks } from '@/types/models'
 
 declare module 'next-auth' {
   interface Session {

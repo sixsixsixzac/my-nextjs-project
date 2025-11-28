@@ -4,7 +4,8 @@ import GoogleProvider from 'next-auth/providers/google'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import type { SocialLinks } from '@/app/(frontend)/settings/components/SocialMediaSection'
+import { constructAuthorAvatarUrl } from '@/lib/utils/image-url'
+import type { SocialLinks } from '@/types/models'
 
 export const authConfig: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -99,7 +100,7 @@ export const authConfig: NextAuthOptions = {
           id: user.id.toString(),
           email: user.email,
           name: user.displayName || user.uName,
-          image: user.userImg !== 'none.png' ? `/images/${user.userImg}` : null,
+          image: constructAuthorAvatarUrl(user.userImg) || null,
           socialMedia
         }
       }

@@ -18,6 +18,16 @@ export type TransactionStatus = 'pending' | 'completed' | 'failed'
 export type UserDetailStatus = 'pending' | 'approve' | 'reject'
 export type WithdrawStatus = 'success' | 'deny' | 'pending' | 'deleted'
 
+// Social Media Links
+export interface SocialLinks {
+  x: string
+  instagram: string
+  youtube: string
+  tiktok: string
+  discord: string
+  facebook: string
+}
+
 // Model Base Interfaces
 export interface AnnouncementBase {
   id: bigint

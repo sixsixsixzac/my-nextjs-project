@@ -11,6 +11,7 @@ import { getCurrentUser } from "@/lib/auth/session"
 import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/prisma"
 import { UserRoleEnum } from "@/lib/utils/roles"
+import { constructAuthorAvatarUrl } from "@/lib/utils/image-url"
 import { NavbarWrapper } from "./NavbarWrapper"
 // import { isAdmin, isWriter } from "@/lib/utils/roles"
 
@@ -35,12 +36,13 @@ export async function UserLayout({ children }: UserLayoutProps) {
     const userProfile = await prisma.userProfile.findUnique({
       where: { id: parseInt(sessionUser.id) },
       select: {
-        id: true,
+        uuid: true,
         displayName: true,
         email: true,
         userImg: true,
         point: true,
         level: true,
+        uName: true,
       },
     })
 
@@ -55,9 +57,11 @@ export async function UserLayout({ children }: UserLayoutProps) {
       userData = {
         display_name: userProfile.displayName,
         email: userProfile.email,
-        avatar: userProfile.userImg !== 'none.png' ? `/images/${userProfile.userImg}` : undefined,
+        avatar: constructAuthorAvatarUrl(userProfile.userImg),
         points: userProfile.point,
         role: role,
+        uuid: userProfile.uuid,
+        username: userProfile.uName,
       }
     }
   }

@@ -4,7 +4,6 @@ import Link from "next/link"
 import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +15,8 @@ import {
 import { User, Settings, LogOut, BookOpen } from "lucide-react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCoins } from "@fortawesome/free-solid-svg-icons"
-import { UserRoleEnum, getRoleLabelFromEnum, getRoleBadgeVariantFromEnum } from "@/lib/utils/roles"
+import { UserRoleEnum } from "@/lib/utils/roles"
+import { encodeUsername } from "@/lib/utils/username-encode"
 
 interface UserDropdownMenuProps {
   user?: {
@@ -25,6 +25,8 @@ interface UserDropdownMenuProps {
     avatar?: string
     points?: number
     role?: UserRoleEnum | number
+    uuid?: string
+    username?: string
   }
   onLogout?: () => void
   profileUrl?: string
@@ -56,6 +58,15 @@ export function UserDropdownMenu({
     return null
   }
 
+  // Construct profile URL using username if available, otherwise use provided profileUrl
+  const getProfileUrl = () => {
+    if (user.username) {
+      const encodedUsername = encodeUsername(user.username)
+      return `/profile/${encodedUsername}`
+    }
+    return profileUrl
+  }
+
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -70,7 +81,7 @@ export function UserDropdownMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="relative">
+        <DropdownMenuLabel>
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user.avatar} alt={user.display_name} />
@@ -87,14 +98,6 @@ export function UserDropdownMenu({
               </p>
             </div>
           </div>
-          {user.role !== undefined && (
-            <Badge
-              variant={getRoleBadgeVariantFromEnum(user.role)}
-              className="absolute top-0 right-0"
-            >
-              {getRoleLabelFromEnum(user.role)}
-            </Badge>
-          )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <div className="px-2 py-2 mx-2 my-1.5 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 rounded-md border border-yellow-200 dark:border-yellow-800">
@@ -135,7 +138,7 @@ export function UserDropdownMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link
-            href={profileUrl}
+            href={getProfileUrl()}
             className="flex items-center transition-colors hover:bg-accent hover:text-accent-foreground rounded-sm cursor-pointer"
           >
             <User className="mr-2 h-4 w-4" />
