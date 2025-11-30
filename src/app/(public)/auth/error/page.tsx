@@ -11,6 +11,10 @@ export const metadata: Metadata = generateMetadata({
   keywords: ["Pekotoon", "error", "ข้อผิดพลาด"],
 })
 
+// Force dynamic rendering to prevent static generation errors
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface ErrorPageProps {
   searchParams: {
     error?: string

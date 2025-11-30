@@ -27,11 +27,19 @@ export async function CartoonCarouselWrapper({
     className,
     priorityFirst = false,
 }: CartoonCarouselWrapperProps) {
-    const initial = await searchCartoons({
-        page: 1,
-        limit,
-        ...(filters ?? {}),
-    });
+    // Handle database errors gracefully during build time
+    let initial;
+    try {
+        initial = await searchCartoons({
+            page: 1,
+            limit,
+            ...(filters ?? {}),
+        });
+    } catch (error) {
+        // During build time or if database is unavailable, return null
+        console.warn(`Failed to fetch cartoons for carousel "${title}":`, error);
+        return null;
+    }
 
     if (!initial.data.length) {
         return null;

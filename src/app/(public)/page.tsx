@@ -9,6 +9,11 @@ export const metadata: Metadata = generateMetadata({
   keywords: ["Pekotoon", "หน้าหลัก", "home", "มังงะ", "การ์ตูน", "นิยาย"],
 });
 
+// Force dynamic rendering to prevent static generation errors
+// This page uses database queries that aren't available during build
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function RootPage() {
   return (
     <div className="min-h-screen bg-background">
