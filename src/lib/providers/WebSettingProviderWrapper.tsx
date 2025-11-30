@@ -22,7 +22,7 @@ export async function WebSettingProviderWrapper({
   } catch (error) {
     // During build time or if database is unavailable, use empty settings
     // At runtime, the settings will be fetched properly
-    console.warn("Failed to fetch web settings, using empty settings:", error)
+    // Silently fall back to empty settings to avoid source map issues with Turbopack
     settings = []
   }
 
