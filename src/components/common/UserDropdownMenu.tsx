@@ -49,10 +49,11 @@ export function UserDropdownMenu({
     if (onLogout) {
       onLogout()
     } else {
-      // Use NEXT_PUBLIC_APP_URL from environment, fallback to window.location.origin
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-        (typeof window !== 'undefined' ? window.location.origin : '')
-      const callbackUrl = baseUrl ? `${baseUrl}/` : '/'
+      // Always use window.location.origin in client components to ensure correct domain
+      // This works correctly in production regardless of environment variable settings
+      const callbackUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/` 
+        : '/'
       await signOut({ callbackUrl })
     }
   }

@@ -27,7 +27,7 @@ export async function CartoonCarouselWrapper({
     className,
     priorityFirst = false,
 }: CartoonCarouselWrapperProps) {
-    // Handle database errors gracefully during build time
+    // Handle database errors gracefully during build time or during navigation transitions
     let initial;
     try {
         initial = await searchCartoons({
@@ -36,8 +36,9 @@ export async function CartoonCarouselWrapper({
             ...(filters ?? {}),
         });
     } catch (error) {
-        // During build time or if database is unavailable, return null
-        console.warn(`Failed to fetch cartoons for carousel "${title}":`, error);
+        // During build time, database unavailability, or navigation transitions (like logout),
+        // return null silently to avoid source map issues in development
+        // The component is designed to fail gracefully
         return null;
     }
 
