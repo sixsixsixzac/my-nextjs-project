@@ -23,12 +23,29 @@ function Avatar({
 
 function AvatarImage({
   className,
+  onError,
+  src,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+  const handleError = React.useCallback((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    // Silently handle image load errors - Radix UI will show fallback automatically
+    // This prevents the error from bubbling up but doesn't suppress browser console logs
+    if (onError) {
+      onError(e);
+    }
+  }, [onError]);
+
+  // Don't render if src is undefined, null, or empty string
+  if (!src) {
+    return null;
+  }
+
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
       className={cn("aspect-square size-full", className)}
+      src={src}
+      onError={handleError}
       {...props}
     />
   )
