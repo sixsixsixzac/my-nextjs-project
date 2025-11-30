@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
+    "build:production": "NODE_ENV=production next build",
     "start": "next start -H 0.0.0.0",
+    "start:production": "NODE_ENV=production next start -H 0.0.0.0",
     "server": "bun run server.ts",
     "lint": "eslint",
     "postinstall": "prisma generate",

@@ -28,9 +28,11 @@ bun-debug.log*
 .vscode
 .idea
 
-# Local env files
+# Local env files (but allow .env.production for build)
 .env*.local
-.env
+.env.local
+.env.development
+# Note: .env.production is NOT ignored so it can be used during build
 
 # Vercel
 .vercel

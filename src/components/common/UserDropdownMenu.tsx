@@ -49,10 +49,10 @@ export function UserDropdownMenu({
     if (onLogout) {
       onLogout()
     } else {
-      // Use window.location.origin to ensure we use the correct base URL (localhost instead of 0.0.0.0)
-      const callbackUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/`
-        : '/'
+      // Use NEXT_PUBLIC_APP_URL from environment, fallback to window.location.origin
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+        (typeof window !== 'undefined' ? window.location.origin : '')
+      const callbackUrl = baseUrl ? `${baseUrl}/` : '/'
       await signOut({ callbackUrl })
     }
   }
