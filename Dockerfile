@@ -26,9 +26,16 @@ COPY .env.production* ./
 # No need to regenerate unless schema changes after copying files
 
 # Build Next.js
+# IMPORTANT: NEXT_PUBLIC_* variables must be available at build time
+# They are embedded into the JavaScript bundle and cannot be changed at runtime
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DOCKER_BUILD=true
 ENV NODE_ENV=production
+# Build args can be passed from docker-compose for build-time variables
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXTAUTH_URL
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 RUN bun run build
 
 EXPOSE 3000

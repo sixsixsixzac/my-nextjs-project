@@ -66,6 +66,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Pass build-time environment variables for NEXT_PUBLIC_* vars
+        # These are embedded at build time and cannot be changed at runtime
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
     container_name: nextjs-app
     restart: unless-stopped
     ports:
