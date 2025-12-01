@@ -39,12 +39,11 @@ export function OptimizedImage({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const isDicebearImage = src?.includes("api.dicebear.com");
-  // Check if it's a local image (starts with /images/ or /uploads/)
-  const isLocalImage = src?.startsWith("/images/") || src?.startsWith("/uploads/");
   const isPriority = Boolean(priority);
   
-  // Force unoptimized for local images to prevent 400 errors
-  const shouldUnoptimize = isDicebearImage || isLocalImage;
+  // Only force unoptimized for problematic remote images (e.g. Dicebear)
+  // Allow local images (e.g. /images/post_img/*) to be optimized by Next.js
+  const shouldUnoptimize = isDicebearImage;
 
   const handleLoad = () => {
     setImageLoaded(true);

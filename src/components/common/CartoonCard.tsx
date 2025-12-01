@@ -79,13 +79,14 @@ function CartoonCardComponent({
       itemScope
       itemType="https://schema.org/ComicSeries"
     >
-      {/* Cover Image Container */}
-      <div className="relative w-full h-[250px] md:aspect-[3/4] md:h-auto overflow-hidden bg-muted">
+      {/* Cover Image Container - fixed visual size but responsive */}
+      <div className="relative mx-auto h-[250px] w-[180px] sm:w-[180px] overflow-hidden bg-muted">
         <OptimizedImage
           src={coverImage}
           alt={`${title} cover image`}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          width={180}
+          height={250}
+          sizes="180px"
           priority={priority}
           quality={70}
           fallbackText={title}

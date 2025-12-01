@@ -73,8 +73,9 @@ services:
         NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
     container_name: nextjs-app
     restart: unless-stopped
-    ports:
-      - "${APP_PORT:-3000}:3000"
+    # Remove port mapping - Nginx will proxy to this service
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - DATABASE_URL=mysql://${MYSQL_USER:-admin_web}:${MYSQL_PASSWORD:-admin_web}@mysql:3306/${MYSQL_DATABASE:-mydb}
