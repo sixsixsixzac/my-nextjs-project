@@ -60,3 +60,6 @@ next-env.d.ts
 /public/images/post_img
 .example.env
 public/logo/logo.png
+
+# cursor/session assets (screenshots, temp images, etc.)
+/assets/

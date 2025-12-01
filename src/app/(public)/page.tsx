@@ -17,7 +17,7 @@ export const revalidate = 0
 export default function RootPage() {
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:py-10 lg:py-12">
+      <main className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-8 sm:py-10 lg:py-12">
         <CartoonCarouselWrapper
           title="มังงะยอดนิยม"
           className="mt-2"
