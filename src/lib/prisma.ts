@@ -16,12 +16,12 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Create adapter using DATABASE_URL connection string
-// PrismaMariaDb works with both MariaDB and MySQL databases
-// Note: MySQL/MariaDB timezone is set via --default-time-zone='+07:00' in docker-compose
-// During build time, DATABASE_URL might not be available, so we use a fallback
-// The adapter is just a wrapper - actual connection only happens when Prisma is used
-const databaseUrl = process.env.DATABASE_URL || 'mysql://dummy:dummy@localhost:3306/dummy'
+// Use DATABASE_URL from .env only (no per-field fallbacks)
+// Example: mysql://admin_web:pinkjung1234@localhost:3306/pekotoon_db
+// Falls back to a local 3306 connection for development if not set.
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  'mysql://admin_web:pinkjung1234@localhost:3306/pekotoon_db'
 
 // Always create adapter - Prisma requires it when using MariaDB adapter
 // The actual database connection won't happen until Prisma is actually used
