@@ -108,6 +108,20 @@ const fetchUserSocialMedia = async (userId: number): Promise<SocialLinks> => {
     }
 }
 
+// Validate critical environment variables
+if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL) {
+    console.error('[NextAuth] WARNING: NEXTAUTH_URL is not set in production! This will cause authentication issues.')
+}
+
+if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
+    console.error('[NextAuth] ERROR: NEXTAUTH_SECRET is not set in production! Authentication will not work.')
+}
+
+// Determine if we should use secure cookies
+// In production, use secure cookies if NEXTAUTH_URL is HTTPS
+const useSecureCookies = process.env.NODE_ENV === 'production' && 
+    (process.env.NEXTAUTH_URL?.startsWith('https://') ?? false)
+
 export const authConfig: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     providers: [
@@ -205,17 +219,21 @@ export const authConfig: NextAuthOptions = {
         sessionToken: {
             name: 'session',
             options: {
-                secure: process.env.NODE_ENV === 'production',
+                // Use secure cookies when NEXTAUTH_URL is HTTPS
+                // This is critical for production behind reverse proxies
+                secure: useSecureCookies,
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
                 maxAge: SESSION_MAX_AGE,
+                // Don't set domain - let browser use default
+                // This ensures cookies work correctly with reverse proxies
             },
         },
         csrfToken: {
             name: 'csrfToken',
             options: {
-                secure: process.env.NODE_ENV === 'production',
+                secure: useSecureCookies,
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
