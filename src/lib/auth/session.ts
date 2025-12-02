@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth'
-import { authConfig } from './auth.config'
+import { authConfig } from '@/app/api/auth/[...nextauth]/route'
 
 export async function getCurrentUser() {
   const session = await getServerSession(authConfig)

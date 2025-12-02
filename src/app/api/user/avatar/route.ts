@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authConfig } from "@/lib/auth/auth.config";
+import { authConfig } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { compressImageFile } from "@/lib/utils/image-compress";
 import { writeFile, mkdir } from "fs/promises";

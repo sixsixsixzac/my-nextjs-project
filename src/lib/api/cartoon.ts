@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authConfig } from "@/lib/auth/auth.config";
+import { authConfig } from "@/app/api/auth/[...nextauth]/route";
 
 /**
  * Shared EpisodeInfo type for both manga and novel episodes

@@ -41,7 +41,7 @@ RUN bun run build
 EXPOSE 3000
 
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV HOSTNAME="localhost"
 ENV NODE_ENV=production
 ENV TZ=Asia/Bangkok
 
