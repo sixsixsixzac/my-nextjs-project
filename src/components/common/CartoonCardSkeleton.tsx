@@ -14,8 +14,8 @@ export function CartoonCardSkeleton({ className }: CartoonCardSkeletonProps) {
         className
       )}
     >
-      {/* Cover Image Skeleton */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted">
+      {/* Cover Image Skeleton - matches CartoonCard dimensions */}
+      <div className="relative mx-auto h-[250px] w-[180px] sm:w-[180px] overflow-hidden bg-muted">
         <Skeleton className="h-full w-full" />
 
         {/* Title Overlay Skeleton (for mobile/tablet) */}

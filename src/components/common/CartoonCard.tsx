@@ -84,11 +84,10 @@ function CartoonCardComponent({
         <OptimizedImage
           src={coverImage}
           alt={`${title} cover image`}
-          width={180}
-          height={250}
+          fill
           sizes="180px"
           priority={priority}
-          quality={70}
+          quality={priority ? 85 : 70}
           fallbackText={title}
           itemProp="image"
         />

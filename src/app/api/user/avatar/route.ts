@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { compressImageFile } from "@/lib/utils/image-compress";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 
@@ -67,6 +67,14 @@ export async function POST(request: NextRequest) {
     const filename = `${userId}_${timestamp}_${randomString}.webp`;
     const filepath = join(uploadsDir, filename);
 
+    // Get current user profile to find old image path
+    const currentUser = await prisma.userProfile.findUnique({
+      where: { id: userId },
+      select: { userImg: true },
+    });
+
+    const oldImagePath = currentUser?.userImg;
+
     // Compress and optimize image - convert all formats to WebP
     const compressedBuffer = await compressImageFile(file, {
       width: 400,
@@ -85,9 +93,23 @@ export async function POST(request: NextRequest) {
     await prisma.userProfile.update({
       where: { id: userId },
       data: {
+        updatedAt: new Date(),
         userImg: avatarPath,
       },
     });
+
+    // Delete old image file if it exists and is not the default placeholder
+    if (oldImagePath && oldImagePath !== "none.png" && oldImagePath.startsWith("uploads/avatars/")) {
+      try {
+        const oldImageFilePath = join(process.cwd(), "public", oldImagePath);
+        if (existsSync(oldImageFilePath)) {
+          await unlink(oldImageFilePath);
+        }
+      } catch (deleteError) {
+        // Log error but don't fail the request - old image deletion is not critical
+        console.error("Failed to delete old avatar image:", deleteError);
+      }
+    }
 
     return NextResponse.json({
       success: true,

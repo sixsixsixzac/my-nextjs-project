@@ -202,7 +202,7 @@ export function CartoonCarousel({
             {slides.map((item) => (
               <CarouselItem
                 key={item.uuid}
-                className="pl-2 xs:pl-3 sm:pl-3 md:pl-2 lg:pl-4 basis-[47%] sm:basis-[32%] md:basis-1/3 lg:basis-1/4 xl:basis-1/6"
+                className="pl-2 xs:pl-3 sm:pl-3 md:pl-2 lg:pl-4 basis-[188px] sm:basis-[192px] md:basis-[188px] lg:basis-[196px]"
               >
                 <CartoonCard {...item} className="h-full" />
               </CarouselItem>
@@ -213,7 +213,7 @@ export function CartoonCarousel({
               Array.from({ length: 3 }).map((_, index) => (
                 <CarouselItem
                   key={`skeleton-${index}`}
-                  className="pl-2 xs:pl-3 sm:pl-3 md:pl-2 lg:pl-4 basis-[47%] sm:basis-[32%] md:basis-1/3 lg:basis-1/4 xl:basis-1/6"
+                  className="pl-2 xs:pl-3 sm:pl-3 md:pl-2 lg:pl-4 basis-[188px] sm:basis-[192px] md:basis-[188px] lg:basis-[196px]"
                   aria-hidden="true"
                 >
                   <CartoonCardSkeleton className="h-full" />

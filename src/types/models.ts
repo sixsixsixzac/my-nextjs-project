@@ -329,7 +329,10 @@ export interface WebContactBase {
   id: number
   label: string
   url: string
-  iconClass: string | null
+  type: 'email' | 'phone' | 'social' | 'website' | 'other'
+  description: string | null
+  displayOrder: number
+  isActive: boolean
   createdAt: Date
   updatedAt: Date
 }
