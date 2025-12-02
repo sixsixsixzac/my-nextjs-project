@@ -210,13 +210,13 @@ function getOrderConfig(orderBy: string): {
       };
     case "chapters":
       return {
-        join: "LEFT JOIN manga_ep ME ON ME.p_id = c.p_id AND ME.status = 'active' AND ME.publish_status = 'now'",
+        join: "LEFT JOIN cartoon_episodes ME ON ME.p_id = c.p_id AND ME.status = 'active' AND ME.publish_status = 'now'",
         orderField: "COUNT(ME.ep_id)",
         needsGroupBy: true,
       };
     case "latest_update":
       return {
-        join: "LEFT JOIN manga_ep ME ON ME.p_id = c.p_id AND ME.status = 'active' AND ME.publish_status = 'now'",
+        join: "LEFT JOIN cartoon_episodes ME ON ME.p_id = c.p_id AND ME.status = 'active' AND ME.publish_status = 'now'",
         orderField: "MAX(ME.create_at)",
         needsGroupBy: true,
       };

@@ -69,6 +69,9 @@ export function OptimizedImage({
         : "transition-opacity duration-500 " + (imageLoaded ? "opacity-100" : "opacity-0"),
       className
     ),
+    // Maintain aspect ratio when CSS modifies image size
+    // Set height to auto when width is provided (or vice versa) to prevent aspect ratio warnings
+    style: width && height ? { height: "auto" } : undefined,
     loading: isPriority ? ("eager" as const) : ("lazy" as const),
     priority: isPriority,
     quality,

@@ -291,7 +291,7 @@ model MangaEp {
   @@unique([pId, epNo])
   @@index([pId])
   @@index([uuid])
-  @@map("manga_ep")
+  @@map("cartoon_episodes")
 }
 
 model MangaEpImage {
@@ -362,6 +362,28 @@ model PasswordResetToken {
   createdAt DateTime? @map("created_at") @db.Timestamp
 
   @@map("password_reset_tokens")
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(uuid())
+  userProfileId     Int     @map("user_profile_id") @db.Int
+  type              String  @db.VarChar(255)
+  provider          String  @db.VarChar(255)
+  providerAccountId String  @map("provider_account_id") @db.VarChar(255)
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String? @map("token_type") @db.VarChar(255)
+  scope             String? @db.Text
+  id_token          String? @db.Text
+  session_state     String? @db.Text
+
+  userProfile UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userProfileId])
+  @@map("accounts")
 }
 
 model Session {
@@ -503,16 +525,9 @@ model UserProfile {
   email                  String    @db.Text
   uPhone                 String?   @map("u_phone") @db.VarChar(10)
   userImg                String    @default("none.png") @map("user_img") @db.VarChar(100)
-  autoEpisodePurchase    Boolean   @default(false) @map("autoEpisodePurchase")
-  loadAllImages          Boolean   @default(false) @map("loadAllImages")
   createdAt              DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.DateTime
   updatedAt              DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.DateTime
-  googleId               String?   @map("google_id") @db.VarChar(255)
-  googleToken            String?   @map("google_token") @db.Text
   socialMedia            String?   @map("social_media") @db.LongText
-  emailVerifiedAt        DateTime? @map("email_verified_at") @db.Timestamp
-  emailVerificationToken String?   @map("email_verification_token") @db.VarChar(255)
-  rememberToken          String?   @map("remember_token") @db.VarChar(100)
 
   announcementsCreated Announcement[]     @relation("AnnouncementCreator")
   announcementsUpdated Announcement[]     @relation("AnnouncementUpdater")
@@ -523,6 +538,7 @@ model UserProfile {
   bans                 UserBan[]
   detail               UserDetail?
   settings             UserSettings[]
+  accounts             Account[]
 
   @@index([uuid(length: 255)])
   @@fulltext([uName])

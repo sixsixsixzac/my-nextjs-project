@@ -319,8 +319,6 @@ export interface UserProfileBase {
   loadAllImages: boolean
   createdAt: Date
   updatedAt: Date
-  googleId: string | null
-  googleToken: string | null
   socialMedia: string | null
   emailVerifiedAt: Date | null
   emailVerificationToken: string | null

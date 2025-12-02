@@ -1,6 +1,8 @@
 import type { SearchFilters } from "@/lib/types/search";
 import { searchCartoons } from "@/lib/api/search";
 import { CartoonCarousel } from "@/components/common/CartoonCarousel";
+import { buildSearchHref, buildSearchUrlParams } from "@/lib/utils/search-params";
+import { LazyCartoonCarouselClient } from "./LazyCartoonCarouselClient";
 
 interface CartoonCarouselWrapperProps {
     title?: string;
@@ -12,11 +14,14 @@ interface CartoonCarouselWrapperProps {
     className?: string;
     /** Mark the first item in this carousel as high-priority for image loading (better LCP) */
     priorityFirst?: boolean;
+    /** If true, lazy load the carousel when it scrolls into view (client-side) */
+    lazy?: boolean;
 }
 
 /**
- * Server component wrapper for CartoonCarousel.
- * - Fetches initial cartoons on the server for SSR.
+ * Unified carousel wrapper component that supports both SSR and lazy loading.
+ * - When lazy=false (default): Fetches initial cartoons on the server for SSR.
+ * - When lazy=true: Renders a client component that lazy loads when scrolled into view.
  * - Hydrates into a client component that can fetch more cartoons via CSR.
  */
 export async function CartoonCarouselWrapper({
@@ -26,7 +31,21 @@ export async function CartoonCarouselWrapper({
     limit = 8,
     className,
     priorityFirst = false,
+    lazy = false,
 }: CartoonCarouselWrapperProps) {
+    // If lazy, render the client component
+    if (lazy) {
+        return (
+            <LazyCartoonCarouselClient
+                title={title}
+                filters={filters}
+                className={className}
+                limit={limit}
+            />
+        );
+    }
+
+    // Server-side rendering path
     // Handle database errors gracefully during build time or during navigation transitions
     let initial;
     try {
@@ -42,49 +61,9 @@ export async function CartoonCarouselWrapper({
         return null;
     }
 
-    if (!initial.data.length) {
-        return null;
-    }
+    // Continue to render even if empty - let CartoonCarousel handle the empty state
 
-    const params = new URLSearchParams();
-
-    if (filters) {
-        const {
-            name,
-            cartoonType,
-            complete_status,
-            orderBy,
-            mainCategory,
-            subCategory,
-            age,
-            original,
-        } = filters;
-
-        if (name) params.set("name", name);
-        if (cartoonType && cartoonType !== "all") params.set("cartoonType", cartoonType);
-        if (complete_status && complete_status !== "all") params.set("complete_status", complete_status);
-        if (orderBy && orderBy !== "relevance") params.set("orderBy", orderBy);
-        if (age && age !== "all") params.set("age", age);
-        if (original && original !== "all") params.set("original", original);
-
-        if (mainCategory && mainCategory !== "all") {
-            if (Array.isArray(mainCategory)) {
-                mainCategory.forEach((id) => params.append("mainCategory", id));
-            } else {
-                params.set("mainCategory", mainCategory);
-            }
-        }
-
-        if (subCategory && subCategory !== "all") {
-            if (Array.isArray(subCategory)) {
-                subCategory.forEach((id) => params.append("subCategory", id));
-            } else {
-                params.set("subCategory", subCategory);
-            }
-        }
-    }
-
-    const searchHref = params.toString() ? `/search?${params.toString()}` : "/search";
+    const searchHref = buildSearchHref(filters);
 
     const items = priorityFirst
         ? initial.data.map((item, index) =>
@@ -121,11 +100,13 @@ export async function CartoonCarouselWrapper({
                 totalItems={20}
                 searchHref={searchHref}
             />
-            <script
-                type="application/ld+json"
-                // This runs only on the server and is emitted once per carousel
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
-            />
+            {items.length > 0 && (
+                <script
+                    type="application/ld+json"
+                    // This runs only on the server and is emitted once per carousel
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
+                />
+            )}
         </>
     );
 }

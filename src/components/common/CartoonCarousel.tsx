@@ -15,6 +15,8 @@ import { CartoonCard, type CartoonCardProps } from "@/components/common/CartoonC
 import { CartoonCardSkeleton } from "@/components/common/CartoonCardSkeleton";
 import type { SearchResponse } from "@/lib/types/search";
 import { fetchService } from "@/lib/services/fetch-service";
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
+import { BookOpen } from "lucide-react";
 
 type CartoonCarouselProps = {
   title?: string;
@@ -142,8 +144,6 @@ export function CartoonCarousel({
     };
   }, [carouselApi, allItems.length, hasMore, isLoadingMore, loadMore, totalItems]);
 
-  if (!slides.length) return null;
-
   return (
     <section className={className} aria-label={title || "แนะนำการ์ตูน"}>
       {title && (
@@ -161,6 +161,20 @@ export function CartoonCarousel({
           )}
         </header>
       )}
+
+      {!slides.length ? (
+        <Empty className="py-12">
+          <EmptyHeader>
+            <EmptyMedia>
+              <BookOpen className="size-8 text-muted-foreground" />
+            </EmptyMedia>
+            <EmptyTitle>ไม่พบการ์ตูน</EmptyTitle>
+            <EmptyDescription>
+              ยังไม่มีการ์ตูนในหมวดหมู่นี้
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
 
       <div className="relative">
         <Carousel
@@ -184,11 +198,11 @@ export function CartoonCarousel({
             containScroll: "trimSnaps",
           }}
         >
-          <CarouselContent className="md:-ml-3 lg:-ml-4 py-1 px-2">
+          <CarouselContent className="md:-ml-2 lg:-ml-4 py-1 px-2">
             {slides.map((item) => (
               <CarouselItem
                 key={item.uuid}
-                className="pl-2 xs:pl-3 sm:pl-3 md:pl-3 lg:pl-4 basis-[47%] sm:basis-[32%] md:basis-1/3 lg:basis-1/4 xl:basis-1/6"
+                className="pl-2 xs:pl-3 sm:pl-3 md:pl-2 lg:pl-4 basis-[47%] sm:basis-[32%] md:basis-1/3 lg:basis-1/4 xl:basis-1/6"
               >
                 <CartoonCard {...item} className="h-full" />
               </CarouselItem>
@@ -199,7 +213,7 @@ export function CartoonCarousel({
               Array.from({ length: 3 }).map((_, index) => (
                 <CarouselItem
                   key={`skeleton-${index}`}
-                  className="pl-2 xs:pl-3 sm:pl-3 md:pl-3 lg:pl-4 basis-[47%] sm:basis-[32%] md:basis-1/3 lg:basis-1/4 xl:basis-1/6"
+                  className="pl-2 xs:pl-3 sm:pl-3 md:pl-2 lg:pl-4 basis-[47%] sm:basis-[32%] md:basis-1/3 lg:basis-1/4 xl:basis-1/6"
                   aria-hidden="true"
                 >
                   <CartoonCardSkeleton className="h-full" />
@@ -214,6 +228,7 @@ export function CartoonCarousel({
           </div>
         </Carousel>
       </div>
+      )}
     </section>
   );
 }

@@ -1,7 +1,7 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
-import { PrismaAdapter } from '@auth/prisma-adapter'
+import { CustomPrismaAdapter } from '@/lib/auth/custom-prisma-adapter'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { constructAuthorAvatarUrl } from '@/lib/utils/image-url'
@@ -123,11 +123,12 @@ const useSecureCookies = process.env.NODE_ENV === 'production' &&
     (process.env.NEXTAUTH_URL?.startsWith('https://') ?? false)
 
 export const authConfig: NextAuthOptions = {
-    adapter: PrismaAdapter(prisma),
+    adapter: CustomPrismaAdapter(prisma),
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || '',
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+            allowDangerousEmailAccountLinking: true, // Allow linking accounts with matching emails
         }),
         CredentialsProvider({
             name: 'Credentials',
@@ -181,6 +182,38 @@ export const authConfig: NextAuthOptions = {
         updateAge: 24 * 60 * 60, // 24 hours
     },
     callbacks: {
+        async signIn({ user, account, profile }) {
+            // Allow OAuth sign-in if account exists or email matches existing user
+            if (account?.provider === 'google' && user.email) {
+                // Check if user exists with this email
+                const existingUser = await prisma.userProfile.findFirst({
+                    where: { email: user.email },
+                })
+                
+                // If user exists, allow linking the account
+                if (existingUser) {
+                    // Check if account is already linked
+                    const existingAccount = await prisma.account.findUnique({
+                        where: {
+                            provider_providerAccountId: {
+                                provider: account.provider,
+                                providerAccountId: account.providerAccountId,
+                            },
+                        },
+                    })
+                    
+                    // If account is not linked, it will be linked automatically by NextAuth
+                    // If it's already linked, allow sign-in
+                    return true
+                }
+                
+                // New user - allow sign-in
+                return true
+            }
+            
+            // For credentials provider, always allow (already validated in authorize)
+            return true
+        },
         async jwt({ token, user }): Promise<JWT> {
             // Initial sign-in - set user data from user object
             if (user) {

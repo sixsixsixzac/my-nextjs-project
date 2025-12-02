@@ -18,6 +18,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "migrate:google-accounts": "npx tsx prisma/migrate-google-accounts.ts",
     "test:webhook": "bun run scripts/test-webhook.ts"
   },
   "packageManager": "bun@latest",

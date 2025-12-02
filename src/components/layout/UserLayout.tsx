@@ -1,12 +1,7 @@
 
 import { ReactNode } from "react"
-import { MobileMenu, type MenuItem } from "@/components/common/MobileMenu"
-import { DesktopMenu } from "@/components/DesktopMenu"
-import { NotificationDropdown } from "@/components/common/NotificationDropdown"
-import { ThemeToggle } from "@/components/common/ThemeToggle"
-import { UserDropdownMenu } from "@/components/common/UserDropdownMenu"
+import { type MenuItem } from "@/components/common/MobileMenu"
 import { Auth } from "@/lib/auth/auth"
-import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/prisma"
 import { UserRoleEnum } from "@/lib/utils/roles"
 import { constructAuthorAvatarUrl } from "@/lib/utils/image-url"
@@ -25,41 +20,46 @@ interface UserLayoutProps {
  * This ensures sensitive routes (e.g., admin routes) are never exposed to unauthorized users.
  */
 export async function UserLayout({ children }: UserLayoutProps) {
+  // Session is cached, so both calls use the same cached result
   const sessionUser = await Auth.user()
   const isAuthenticated = !!sessionUser
 
   // Fetch full user data from database if user is logged in
   let userData = null
   if (sessionUser?.id) {
-    const userProfile = await prisma.userProfile.findUnique({
-      where: { id: parseInt(sessionUser.id) },
-      select: {
-        uuid: true,
-        displayName: true,
-        email: true,
-        userImg: true,
-        point: true,
-        level: true,
-        uName: true,
-      },
-    })
+    const userId = parseInt(sessionUser.id, 10)
+    // Validate that userId is a valid number
+    if (!isNaN(userId) && userId > 0) {
+      const userProfile = await prisma.userProfile.findUnique({
+        where: { id: userId },
+        select: {
+          uuid: true,
+          displayName: true,
+          email: true,
+          userImg: true,
+          point: true,
+          level: true,
+          uName: true,
+        },
+      })
 
-    if (userProfile) {
-      // Map level to UserRoleEnum (0 = User, 6 = Writer, 7 = Admin)
-      const role = userProfile.level === 7 
-        ? UserRoleEnum.ADMIN 
-        : userProfile.level === 6 
-        ? UserRoleEnum.WRITER 
-        : UserRoleEnum.USER
+      if (userProfile) {
+        // Map level to UserRoleEnum (0 = User, 6 = Writer, 7 = Admin)
+        const role = userProfile.level === 7 
+          ? UserRoleEnum.ADMIN 
+          : userProfile.level === 6 
+          ? UserRoleEnum.WRITER 
+          : UserRoleEnum.USER
 
-      userData = {
-        display_name: userProfile.displayName,
-        email: userProfile.email,
-        avatar: constructAuthorAvatarUrl(userProfile.userImg),
-        points: userProfile.point,
-        role: role,
-        uuid: userProfile.uuid,
-        username: userProfile.uName,
+        userData = {
+          display_name: userProfile.displayName,
+          email: userProfile.email,
+          avatar: constructAuthorAvatarUrl(userProfile.userImg),
+          points: userProfile.point,
+          role: role,
+          uuid: userProfile.uuid,
+          username: userProfile.uName,
+        }
       }
     }
   }
