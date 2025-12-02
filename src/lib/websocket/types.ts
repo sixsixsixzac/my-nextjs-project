@@ -23,9 +23,12 @@ export interface WebSocketConfig {
   reconnectInterval?: number
   maxReconnectAttempts?: number
   heartbeatInterval?: number
+  autoConnect?: boolean
 }
 
 export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
+
+import type { Observable } from 'rxjs'
 
 export interface WebSocketHookReturn {
   socket: WebSocket | null
@@ -36,5 +39,6 @@ export interface WebSocketHookReturn {
   connect: () => void
   disconnect: () => void
   lastMessage: WebSocketMessage | null
+  messages$?: Observable<WebSocketMessage>
 }
 
