@@ -59,7 +59,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
+    <div className="container mx-auto py-8 max-w-6xl px-3">
       <h1 className="text-3xl font-bold mb-8">ตั้งค่า</h1>
 
       <div className="space-y-6">

@@ -31,7 +31,7 @@ export function GoogleLinkSection() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium">สถานะการเชื่อมต่อ</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-destructive">
               ยังไม่ได้เชื่อมต่อบัญชี Google
             </p>
           </div>
