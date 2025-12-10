@@ -117,7 +117,7 @@ export function SignUpForm({ recaptchaSiteKey }: SignUpFormProps) {
 
       // Redirect to sign in page after a short delay
       setTimeout(() => {
-        window.location.href = '/auth/signin'
+      window.location.href = '/auth/signin'
       }, 1500)
     } catch (error) {
       console.error('Sign up error:', error)

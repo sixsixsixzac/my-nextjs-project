@@ -16,6 +16,8 @@ export async function proxy(request: NextRequest) {
   }
 
   // Get user token
+  // getToken automatically reads the session cookie from the request
+  // It will find the 'session' cookie as configured in NextAuth
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -55,15 +57,11 @@ export async function proxy(request: NextRequest) {
 }
 
 // Static matcher - Next.js requires this to be statically analyzable
-// The proxy function will handle the actual route matching dynamically
 export const config = {
   matcher: [
     '/settings/:path*',
     '/manga/:path*',
-    '/admin/:path*',
-    '/writer/:path*',
-    '/api/:path*',
-    // Add more common protected route patterns here as needed
+    '/novel/:path*'
   ],
 }
 
